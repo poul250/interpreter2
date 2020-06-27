@@ -1,0 +1,12 @@
+porgram
+{
+    int n, result = 1;
+    read(n);
+
+    while (n > 0) {
+        result = result * n;
+        n = n - 1;
+    }
+
+    write(result);
+}
