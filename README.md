@@ -7,7 +7,7 @@ This interpreter is a modification of https://github.com/poul250/interpreter.
 * An entry of the form [α] means that either α or ε can be found in the desired chain at this point.
 ```
 〈Program〉::= program {〈Descriptions〉〈Operators〉}
-〈Descriptions〉 ::= [〈Description〉;]
+〈Descriptions〉 ::= ⎨〈Description〉;⎬
 〈Description〉::=〈Type〉〈Variable〉⎨,〈Variable〉⎬
 〈Type〉::= int | string | boolean | real
 〈Variable〉::=〈identifier〉|〈Identifier〉=〈Constant〉
