@@ -1,7 +1,10 @@
 #include <iostream>
-#include <visitor/visitor.h>
+#include <fstream>
+#include <lex/lexems.h>
+#include <filesystem>
+#include <syntax/visitor.h>
 
-namespace visitor {
+namespace interpreter::syntax {
 
 std::ostream& operator<<(std::ostream& stream, const Type& type) {
   stream << "type";
@@ -18,7 +21,7 @@ std::ostream& operator<<(std::ostream& stream, const Identifier& ident) {
   return stream;
 }
 
-class DebugSourceVisitor: visitor::SourceVisitor {
+class DebugSourceVisitor: ModelVisitor {
   void VisitDescription(Type type,
                         std::vector<std::pair<Identifier, std::optional<Constant>>> variables) {
     std::cout << "visit description with type" << type
@@ -41,8 +44,39 @@ class DebugSourceVisitor: visitor::SourceVisitor {
 
 }
 
+void test_lexer(std::istream& input) {
+  namespace lexems = interpreter::lexems;
+  lexems::Lexer lexer{input};
 
-int main() {
-  std::cout << "Hello world";
+  try {
+    for (;;) {
+      const auto& lex = lexer.GetNext();
+      std::cout << lex << std::endl;
+      if (lex.type == lexems::Type::NONE) {
+        break;
+      }
+    }
+  } catch (const std::runtime_error& exc) {
+    std::cout << exc.what();
+  } catch (const interpreter::lexems::LexicalError& ecx) {
+    std::cout << ecx.what();
+  }
+}
+
+void process(std::istream& input) {
+  test_lexer(input);
+}
+
+int main(int argc, char** argv) {
+  if (argc == 1) {
+    process(std::cin);
+  } else {
+    std::ifstream input{argv[1]};
+    if (!input) {
+      std::cout << "Error while opening file " << argv[1] << std::endl;
+      return -1;
+    }
+    process(input);
+  }
   return 0;
 }

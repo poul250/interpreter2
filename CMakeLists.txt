@@ -8,4 +8,4 @@ include_directories(include)
 add_executable(interpreter2
         include/interpreter.hpp
         src/interpreter.cpp
-        src/main.cpp include/visitor/visitor.h include/lex/types.h include/lex/lexeme.h src/lex/lexeme.cpp)
+        src/main.cpp include/lex/types.h include/lex/lexems.h src/lex/lexems.cpp include/syntax/visitor.h src/lex/print_lexems.cpp src/syntax/visitor.cpp)

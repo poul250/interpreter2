@@ -1,4 +1,4 @@
-porgram
+program
 {
     int n, result = 1;
     read(n);

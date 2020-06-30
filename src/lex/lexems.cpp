@@ -2,9 +2,9 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include <lex/lexeme.h>
+#include <lex/lexems.h>
 
-namespace interpreter::lex {
+namespace interpreter::lexems {
 namespace {
 
 inline bool isliteral(char ch) {
@@ -39,14 +39,6 @@ const std::unordered_map<std::string, Type> STRING_TO_TYPE = {
         {"==",       Type::EQ},
         {"<=",       Type::LE},
         {">=",       Type::GE},
-
-};
-
-const std::unordered_map<char, Type> CHAR_TO_TYPE = {
-        {'%', Type::MOD},
-        {'+', Type::PLUS},
-        {'-', Type::MINUS},
-        {'*', Type::MUL},
 };
 
 const std::unordered_set<char> COMPLEX_CHARS = {
@@ -58,15 +50,32 @@ const std::unordered_map<char, Type> SINGLE_CHAR = {
         {'<', Type::LT},
         {'>', Type::GT},
         {'/', Type::DIV},
+        {'+', Type::PLUS},
+        {'-', Type::MINUS},
         {'%', Type::MOD},
+        {'*', Type::MUL},
+        {';', Type::SEMICOLON},
+        {',', Type::COMMA},
         {'{', Type::OPENING_BRACE},
         {'}', Type::CLOSING_BRACE},
         {'(', Type::OPENING_PARENTHESIS},
         {')', Type::CLOSING_PARENTHESIS},
 };
+
+template <typename Key, typename Value>
+std::unordered_map<Value, Key>
+ReverseMap(const std::unordered_map<Key, Value> map) {
+  std::unordered_map<Value, Key> result;
+  for (const auto&[key, value] : map) {
+    result.emplace(value, key);
+  }
+  return result;
+}
+
 } // namespcae
 
-Lexer::Lexer(std::istream& input, int line) : _input(input), _line(line) { }
+Lexer::Lexer(std::istream& input, int line)
+        : _input(input), _line(line), _current_state{&Lexer::Idle} { }
 
 Lexeme Lexer::GetNext() {
   if (_input.eof()) return {};
@@ -74,7 +83,7 @@ Lexeme Lexer::GetNext() {
   _buf.clear();
 
   char ch;
-  while (_input >> ch) {
+  while (_input.get(ch)) {
     const auto&[next_state, unget, opt_lexeme] = _current_state(
             *this, ch, false);
 
@@ -118,7 +127,7 @@ Lexer::StateResult Lexer::Idle(char ch, bool eof) {
     return {&Lexer::Idle, false, Lexeme{it->second}};
   }
 
-  throw LexicalError("Unrecognized symbol");
+  throw LexicalError(std::string{"Unrecognized symbol "} + ch);
 }
 
 Lexer::StateResult Lexer::ComplexOp(char ch, bool eof) {

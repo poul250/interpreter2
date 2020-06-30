@@ -8,17 +8,23 @@
 
 #include "types.h"
 
-namespace interpreter::lex {
+namespace interpreter::lexems {
 
-class LexicalError : std::runtime_error {
+class LexicalError : public std::runtime_error {
 public:
-  explicit LexicalError(const std::string& error) : std::runtime_error{error.c_str()} {
+  inline explicit LexicalError(const std::string& error) : std::runtime_error{error} {
   }
 };
 
 struct Lexeme {
-  const Type type;
-  const std::variant<std::monostate, int, double, bool, std::string> data;
+  Lexeme(const Lexeme&) = default;
+  Lexeme(Lexeme&&) = default;
+
+  Lexeme& operator=(const Lexeme&) = default;
+  Lexeme& operator=(Lexeme&&) = default;
+
+  Type type;
+  std::variant<std::monostate, int, double, bool, std::string> data;
 };
 
 class Lexer {
@@ -59,4 +65,7 @@ private:
 
   std::istream& _input;
 };
-} // namespace interpreter::lex
+
+std::ostream& operator<<(std::ostream& out, const Lexeme& lexeme);
+
+} // namespace interpreter::lexems
