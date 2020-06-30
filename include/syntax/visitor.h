@@ -20,11 +20,20 @@ enum class Type {
   BOOL,
 };
 
-class Identifier {
+struct Identifier {
+  const std::string name;
 };
 
-class Constant {
+struct Constant {
+  const Type type;
+  const std::variant<int, double, bool, std::string> value;
 };
+
+struct Variable {
+  Identifier id;
+  std::optional<Constant> default_value;
+};
+
 
 class ModelVisitor {
 public:
@@ -33,8 +42,7 @@ public:
   virtual void VisitProgram() = 0;
   virtual void VisitDescriptions() = 0;
   virtual void VisitDescription(Type type) = 0;
-  virtual void VisitType(Type&& type) = 0;
-  virtual void VisitVariable() = 0;
+  virtual void VisitVariable(Variable&& variable) = 0;
   virtual void VisitRead(Identifier identifier) = 0;
 
   // TODO: replace Identifier with Expression
