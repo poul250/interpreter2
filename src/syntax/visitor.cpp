@@ -11,8 +11,8 @@ namespace tu = lexems::type_utils;
 Type GetTypeByLexType(lexems::Type type) {
   if (type == lexems::Type::TYPE_INT) return Type::INT;
   else if (type == lexems::Type::TYPE_REAL) return Type::REAL;
-  else if (type == lexems::Type::TYPE_STR) return Type::STR,
-  else if (type == lexems::Type::TYPE::BOOL) return Type::BOOL;
+  else if (type == lexems::Type::TYPE_STR) return Type::STR;
+  else if (type == lexems::Type::TYPE_BOOL) return Type::BOOL;
 
   throw SyntaxError{"Unexpected lexeme"};
 }
