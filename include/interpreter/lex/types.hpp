@@ -69,39 +69,36 @@ enum class Type {
   NOT,
   AND,
   OR,
-  LT, // <
-  LE, // <=
-  GT, // >
-  GE, // >=
-  EQ, // ==
-  NE, // !=
+  LT,  // <
+  LE,  // <=
+  GT,  // >
+  GE,  // >=
+  EQ,  // ==
+  NE,  // !=
   _LOGICAL_OPS_END,
   _ARITHMETICAL_OPS_END,
 };
 
-namespace type_utils {
-[[nodiscard]]
-constexpr inline bool IsVariableType(Type type) noexcept {
+[[nodiscard]] constexpr bool IsVariableType(Type type) noexcept {
   return Type::_TYPE_START < type && type < Type::_TYPE_END;
 }
 
-[[nodiscard]]
-constexpr inline bool IsLogicalOperation(Type type) noexcept {
+[[nodiscard]] constexpr bool IsLogicalOperation(Type type) noexcept {
   return Type::_LOGICAL_OPS_START < type && type < Type::_LOGICAL_OPS_END;
 }
 
-[[nodiscard]]
-constexpr inline bool IsArithmeticalOperation(Type type) noexcept {
+[[nodiscard]] constexpr bool IsArithmeticalOperation(Type type) noexcept {
   return Type::_ARITHMETICAL_OPS_START < type &&
          type < Type::_ARITHMETICAL_OPS_END;
 }
 
-[[nodiscard]]
-constexpr inline bool IsConstant(Type type) noexcept {
+[[nodiscard]] constexpr bool IsConstant(Type type) noexcept {
   return (Type::_VALUES_START < type && type < Type::_VALUES_END) ||
          type == Type::FALSE || type == Type::TRUE;
 }
 
-} // namespace type_utils
+[[nodiscard]] constexpr bool IsBoolean(Type type) noexcept {
+  return type == Type::FALSE || type == Type::TRUE;
+}
 
-} // namespace lexems
+}  // namespace interpreter::lexems

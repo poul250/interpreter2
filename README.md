@@ -38,4 +38,4 @@ This interpreter is a modification of https://github.com/poul250/interpreter.
 
 ```
 
-See specification.pdf for details
+See docs/specification.pdf for details

@@ -1,0 +1,8 @@
+program {
+    int x = 1;
+    int y;
+
+    write(x);
+    read(y);
+    write(y);
+}
