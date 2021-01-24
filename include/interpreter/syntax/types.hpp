@@ -83,33 +83,26 @@ struct EnumByType {
 
 namespace details {
 
-// TODO: pls do something better
-template <typename CallbackT, typename ReturnT>
-class CallbackBase {
- public:
-  virtual ~CallbackBase() = default;
-  virtual ReturnT Call(CallbackT&& handler) = 0;
-};
-
-template <typename CallbackT, typename ReturnT, VariableType enum_value>
-class TypedCall : public CallbackBase<CallbackT, ReturnT> {
- public:
-  inline ReturnT Call(CallbackT&& handler) {
-    return std::invoke(std::forward<CallbackT>(handler),
-                       utils::TypeTag<typename TypeByEnum<enum_value>::type>{});
-  }
-};
-
-template <typename CallbackT, typename ReturnT, size_t... I>
-constexpr auto MakeCallbacks(std::index_sequence<I...>) {
-  return std::array<std::unique_ptr<CallbackBase<CallbackT, ReturnT>>,
-                    sizeof...(I)>{std::make_unique<
-      TypedCall<CallbackT, ReturnT, static_cast<VariableType>(I)>>()...};
+template <typename HandlerT, typename ReturnT, VariableType enum_value>
+ReturnT HandlerCaller(HandlerT&& handler) {
+  return std::invoke(std::forward<HandlerT>(handler),
+                     utils::TypeTag<typename TypeByEnum<enum_value>::type>{});
 }
 
-template <typename CallbackT, typename ReturnT = void>
-constexpr auto MakeVariableTypeCallbacks() {
-  return MakeCallbacks<CallbackT, ReturnT>(
+template <typename HandlerT, typename ReturnT, size_t... I>
+constexpr auto MakeCallers(std::index_sequence<I...>) {
+  return std::array<std::add_pointer_t<ReturnT(HandlerT &&)>, sizeof...(I)>{
+      HandlerCaller<HandlerT, ReturnT, static_cast<VariableType>(I)>...};
+}
+
+// looks weird, but is's ok
+template <typename Handler>
+using HandlerReturnType = std::result_of_t<Handler(
+    utils::TypeTag<TypeByEnum<static_cast<VariableType>(0)>>)>;
+
+template <typename HandlerT, typename ReturnT = HandlerReturnType<HandlerT>>
+constexpr auto MakeHandlerTypeCallers() {
+  return MakeCallers<HandlerT, ReturnT>(
       std::make_index_sequence<static_cast<size_t>(VariableType::_END)>{});
 }
 
@@ -157,13 +150,11 @@ class VisitType {
 
   template <typename HandlerT>
   auto operator()(HandlerT&& handler) const {
-    using AnyTypeTag = utils::TypeTag<TypeByEnum<static_cast<VariableType>(0)>>;
-    using HandlerCallResult = std::result_of_t<HandlerT(AnyTypeTag)>;
+    // oh my god this is the best i've ever done
+    static constexpr auto callbacks =
+        details::MakeHandlerTypeCallers<HandlerT>();
 
-    static auto type_callers =
-        details::MakeVariableTypeCallbacks<HandlerT, HandlerCallResult>();
-
-    return type_callers[static_cast<size_t>(type_)]->Call(
+    return callbacks[static_cast<size_t>(type_)](
         std::forward<HandlerT>(handler));
   }
 
