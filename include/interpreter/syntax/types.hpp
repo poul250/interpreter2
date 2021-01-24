@@ -84,14 +84,14 @@ struct EnumByType {
 namespace details {
 
 // TODO: pls do something better
-template <typename CallbackT, typename ReturnT = void>
+template <typename CallbackT, typename ReturnT>
 class CallbackBase {
  public:
   virtual ~CallbackBase() = default;
   virtual ReturnT Call(CallbackT&& handler) = 0;
 };
 
-template <VariableType enum_value, typename CallbackT, typename ReturnT = void>
+template <VariableType enum_value, typename CallbackT, typename ReturnT>
 class TypedCall : public CallbackBase<CallbackT, ReturnT> {
  public:
   inline ReturnT Call(CallbackT&& handler) {
@@ -100,39 +100,23 @@ class TypedCall : public CallbackBase<CallbackT, ReturnT> {
   }
 };
 
-template <VariableType From, VariableType To, typename CallbackT,
-          typename ReturnT = void>
-constexpr auto MakeCallbacks() {
-  constexpr auto from = static_cast<size_t>(From);
-  constexpr auto to = static_cast<size_t>(To);
+template <size_t I, typename CallbackT, typename ReturnT>
+constexpr std::unique_ptr<CallbackBase<CallbackT, ReturnT>> MakeTypedCall() {
+  return std::make_unique<
+      TypedCall<static_cast<VariableType>(I), CallbackT, ReturnT>>();
+}
 
-  static_assert(from < to);
-
-  if constexpr (from + 1 == to) {
-    return std::make_tuple(
-        std::make_unique<TypedCall<From, CallbackT, ReturnT>>());
-  } else {
-    return std::tuple_cat(
-        std::make_tuple(
-            std::make_unique<TypedCall<From, CallbackT, ReturnT>>()),
-        MakeCallbacks<static_cast<VariableType>(from + 1), To, CallbackT,
-                      ReturnT>());
-  }
+template <typename CallbackT, typename ReturnT, size_t... I>
+constexpr auto MakeCallbacks(std::integer_sequence<size_t, I...>) {
+  return std::array<std::unique_ptr<CallbackBase<CallbackT, ReturnT>>,
+                    sizeof...(I)>{MakeTypedCall<I, CallbackT, ReturnT>()...};
 }
 
 template <typename CallbackT, typename ReturnT = void>
 constexpr auto MakeVariableTypeCallbacks() {
-  constexpr auto types_begin = static_cast<VariableType>(0);
-  constexpr auto types_end = VariableType::_END;
-  constexpr auto make_container = [](auto&&... values) {
-    return std::array<std::unique_ptr<CallbackBase<CallbackT, ReturnT>>,
-                      sizeof...(values)>{
-        std::forward<decltype(values)>(values)...};
-  };
-
-  return std::apply(
-      make_container,
-      MakeCallbacks<types_begin, types_end, CallbackT, ReturnT>());
+  return MakeCallbacks<CallbackT, ReturnT>(
+      std::make_integer_sequence<size_t,
+                                 static_cast<size_t>(VariableType::_END)>{});
 }
 
 }  // namespace details
