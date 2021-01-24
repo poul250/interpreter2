@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
+// TODO: don't include syntax/types here, make new models
 #include "interpreter/syntax/types.hpp"
 
 namespace interpreter::instructions {
