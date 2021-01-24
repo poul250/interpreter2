@@ -91,7 +91,7 @@ class CallbackBase {
   virtual ReturnT Call(CallbackT&& handler) = 0;
 };
 
-template <VariableType enum_value, typename CallbackT, typename ReturnT>
+template <typename CallbackT, typename ReturnT, VariableType enum_value>
 class TypedCall : public CallbackBase<CallbackT, ReturnT> {
  public:
   inline ReturnT Call(CallbackT&& handler) {
@@ -100,23 +100,17 @@ class TypedCall : public CallbackBase<CallbackT, ReturnT> {
   }
 };
 
-template <size_t I, typename CallbackT, typename ReturnT>
-constexpr std::unique_ptr<CallbackBase<CallbackT, ReturnT>> MakeTypedCall() {
-  return std::make_unique<
-      TypedCall<static_cast<VariableType>(I), CallbackT, ReturnT>>();
-}
-
 template <typename CallbackT, typename ReturnT, size_t... I>
-constexpr auto MakeCallbacks(std::integer_sequence<size_t, I...>) {
+constexpr auto MakeCallbacks(std::index_sequence<I...>) {
   return std::array<std::unique_ptr<CallbackBase<CallbackT, ReturnT>>,
-                    sizeof...(I)>{MakeTypedCall<I, CallbackT, ReturnT>()...};
+                    sizeof...(I)>{std::make_unique<
+      TypedCall<CallbackT, ReturnT, static_cast<VariableType>(I)>>()...};
 }
 
 template <typename CallbackT, typename ReturnT = void>
 constexpr auto MakeVariableTypeCallbacks() {
   return MakeCallbacks<CallbackT, ReturnT>(
-      std::make_integer_sequence<size_t,
-                                 static_cast<size_t>(VariableType::_END)>{});
+      std::make_index_sequence<static_cast<size_t>(VariableType::_END)>{});
 }
 
 }  // namespace details
