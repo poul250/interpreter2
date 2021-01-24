@@ -10,6 +10,7 @@
 
 #include "interpreter/utils/type_map.hpp"
 
+// TODO: move all of weird stuff in another header
 namespace interpreter::syntax {
 
 struct TypeError : public std::runtime_error {
@@ -22,6 +23,63 @@ struct TypeMissmatchError : public TypeError {
 
 struct UnknownTypeError : public TypeError {
   using TypeError::TypeError;
+};
+
+template <typename T>
+struct IntegralTypeTraits {
+  using ValueType = T;
+  using Reference = T&;
+  using ConstReference = T;
+};
+
+template <typename T>
+struct NonIntegralTypeTraits {
+  using ValueType = T;
+  using Reference = T&;
+  using ConstReference = const T&;
+};
+
+template <typename T>
+struct TypeTraits : NonIntegralTypeTraits<T> {};
+
+enum class VariableType;
+
+namespace details {
+
+template <VariableType enum_value>
+struct VarTypeEnumTag : utils::EnumValueTag<VariableType, enum_value> {};
+
+template <typename T>
+struct VarTypeTag : utils::TypeTag<T> {};
+
+template <VariableType enum_value, typename T>
+using MakeMapping =
+    std::pair<utils::AddMapping<utils::DeclareType<VarTypeEnumTag<enum_value>>,
+                                VarTypeTag<T>>,
+              utils::AddMapping<utils::DeclareType<VarTypeTag<T>>,
+                                VarTypeEnumTag<enum_value>>>;
+}  // namespace details
+
+template <VariableType enum_value>
+struct TypeByEnum {
+  using type =
+      typename utils::MapType<details::VarTypeEnumTag<enum_value>>::type::type;
+};
+
+template <typename T>
+struct EnumByType {
+  static constexpr VariableType value =
+      utils::MapType<details::VarTypeTag<T>>::type::value;
+};
+
+struct TypeChecker {
+  template <typename T>
+  inline void operator()(const T&) const {
+    if (type != EnumByType<T>::value) {
+      throw TypeMissmatchError{"Incorrect type"};
+    }
+  }
+  VariableType type;
 };
 
 enum class VariableType {
@@ -41,22 +99,6 @@ using StrT = std::string;
 
 }  // namespace types
 
-namespace details {
-
-template <VariableType enum_value>
-struct VarTypeEnumTag : utils::EnumValueTag<VariableType, enum_value> {};
-
-template <typename T>
-struct VarTypeTag : utils::TypeTag<T> {};
-
-template <VariableType enum_value, typename T>
-using MakeMapping =
-    std::pair<utils::AddMapping<utils::DeclareType<VarTypeEnumTag<enum_value>>,
-                                VarTypeTag<T>>,
-              utils::AddMapping<utils::DeclareType<VarTypeTag<T>>,
-                                VarTypeEnumTag<enum_value>>>;
-}  // namespace details
-
 namespace mapping {
 
 struct IntMapping : details::MakeMapping<VariableType::INT, types::IntT> {};
@@ -66,20 +108,18 @@ struct StrMapping : details::MakeMapping<VariableType::STR, types::StrT> {};
 
 }  // namespace mapping
 
+// TODO: automate it
 using VariableValue =
     std::variant<types::IntT, types::RealT, types::BoolT, types::StrT>;
 
-template <VariableType enum_value>
-struct TypeByEnum {
-  using type =
-      typename utils::MapType<details::VarTypeEnumTag<enum_value>>::type::type;
-};
+template <>
+struct TypeTraits<types::IntT> : IntegralTypeTraits<types::IntT> {};
 
-template <typename T>
-struct EnumByType {
-  static constexpr VariableType value =
-      utils::MapType<details::VarTypeTag<T>>::type::value;
-};
+template <>
+struct TypeTraits<types::BoolT> : IntegralTypeTraits<types::BoolT> {};
+
+template <>
+struct TypeTraits<types::RealT> : IntegralTypeTraits<types::RealT> {};
 
 namespace details {
 
@@ -107,42 +147,6 @@ constexpr auto MakeHandlerTypeCallers() {
 }
 
 }  // namespace details
-
-template <typename T>
-struct IntegralTypeTraits {
-  using ValueType = T;
-  using Reference = T&;
-  using ConstReference = T;
-};
-
-template <typename T>
-struct NonIntegralTypeTraits {
-  using ValueType = T;
-  using Reference = T&;
-  using ConstReference = const T&;
-};
-
-template <typename T>
-struct TypeTraits : NonIntegralTypeTraits<T> {};
-
-template <>
-struct TypeTraits<types::IntT> : IntegralTypeTraits<types::IntT> {};
-
-template <>
-struct TypeTraits<types::BoolT> : IntegralTypeTraits<types::BoolT> {};
-
-template <>
-struct TypeTraits<types::RealT> : IntegralTypeTraits<types::RealT> {};
-
-struct TypeChecker {
-  template <typename T>
-  inline void operator()(const T&) const {
-    if (type != EnumByType<T>::value) {
-      throw TypeMissmatchError{"Incorrect type"};
-    }
-  }
-  VariableType type;
-};
 
 class VisitType {
  public:
