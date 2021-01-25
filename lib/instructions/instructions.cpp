@@ -17,22 +17,11 @@ template <typename T>
 
 }  // namespace
 
-InstructionsBlock::InstructionsBlock(
-    std::vector<std::unique_ptr<Instruction>> instructions) noexcept
-    : instructions_(std::move(instructions)) {}
-
 void InstructionsBlock::Execute(ExecutionContext& context) const {
   for (const auto& instruction : instructions_) {
     instruction->Execute(context);
   }
 }
-
-VariableDefinition::VariableDefinition(
-    syntax::VariableType type, std::string name,
-    std::optional<syntax::Constant> initial_value) noexcept
-    : type_(type),
-      name_(std::move(name)),
-      initial_value_(std::move(initial_value)) {}
 
 void VariableDefinition::Execute(ExecutionContext& context) const {
   if (context.variables.contains(name_)) {
@@ -48,9 +37,6 @@ void VariableDefinition::Execute(ExecutionContext& context) const {
     context.variables[name_] = Variable{type_, std::nullopt};
   }
 }
-
-Write::Write(std::string variable_name) noexcept
-    : variable_name_(std::move(variable_name)) {}
 
 void Write::Execute(ExecutionContext& context) const {
   auto var_it = context.variables.find(variable_name_);
@@ -70,9 +56,6 @@ void Write::Execute(ExecutionContext& context) const {
   const auto& value = *opt_value;
   std::visit([&context](const auto& value) { context.output << value; }, value);
 }
-
-Read::Read(std::string variable_name) noexcept
-    : variable_name_(std::move(variable_name)) {}
 
 void Read::Execute(ExecutionContext& context) const {
   auto var_it = context.variables.find(variable_name_);

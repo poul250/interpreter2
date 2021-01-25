@@ -39,8 +39,9 @@ class Instruction {
 
 class InstructionsBlock : public Instruction {
  public:
-  explicit InstructionsBlock(
-      std::vector<std::unique_ptr<Instruction>> instructions_) noexcept;
+  inline explicit InstructionsBlock(
+      std::vector<std::unique_ptr<Instruction>> instructions)
+      : instructions_{std::move(instructions)} {}
   void Execute(ExecutionContext& context) const override;
 
  private:
@@ -49,9 +50,12 @@ class InstructionsBlock : public Instruction {
 
 class VariableDefinition : public Instruction {
  public:
-  explicit VariableDefinition(
+  inline explicit VariableDefinition(
       syntax::VariableType type, std::string name,
-      std::optional<syntax::Constant> initial_value) noexcept;
+      std::optional<syntax::Constant> initial_value) noexcept
+      : type_{type},
+        name_{std::move(name)},
+        initial_value_{std::move(initial_value)} {}
   void Execute(ExecutionContext& context) const override;
 
  private:
@@ -62,7 +66,8 @@ class VariableDefinition : public Instruction {
 
 class Write : public Instruction {
  public:
-  explicit Write(std::string variable_name) noexcept;
+  inline explicit Write(std::string variable_name) noexcept
+      : variable_name_{std::move(variable_name)} {}
   void Execute(ExecutionContext& context) const override;
 
  private:
@@ -72,7 +77,8 @@ class Write : public Instruction {
 
 class Read : public Instruction {
  public:
-  explicit Read(std::string variable_name) noexcept;
+  inline explicit Read(std::string variable_name) noexcept
+      : variable_name_{std::move(variable_name)} {}
   void Execute(ExecutionContext& context) const override;
 
  private:

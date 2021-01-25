@@ -2,8 +2,8 @@
 
 #include <sstream>
 
-#include "interpreter/lex/lexems.hpp"
-#include "interpreter/lex/types.hpp"
+#include "interpreter/lexer/lexems.hpp"
+#include "interpreter/lexer/types.hpp"
 
 namespace test {
 

@@ -1,7 +1,7 @@
 #include <iostream>
 #include <unordered_map>
 
-#include "interpreter/lex/lexems.hpp"
+#include "interpreter/lexer/lexems.hpp"
 
 namespace interpreter::lexems {
 

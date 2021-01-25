@@ -1,4 +1,4 @@
-#include "interpreter/lex/lexems.hpp"
+#include "interpreter/lexer/lexems.hpp"
 
 #include <functional>
 #include <iostream>

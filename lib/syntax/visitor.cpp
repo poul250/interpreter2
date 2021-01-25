@@ -3,7 +3,7 @@
 #include <iostream>
 #include <unordered_map>
 
-#include "interpreter/lex/lexems.hpp"
+#include "interpreter/lexer/lexems.hpp"
 
 namespace interpreter::syntax {
 
@@ -11,6 +11,7 @@ namespace {
 
 enum class ParseResult { SUCCESS, FAILURE };
 
+// TODO: Is it good mapping?
 [[nodiscard]] VariableType MapLexType2Type(lexems::Type type) {
   using LexType = ::interpreter::lexems::Type;
 
