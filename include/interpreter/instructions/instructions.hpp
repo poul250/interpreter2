@@ -17,7 +17,7 @@ struct RuntimeError : public std::runtime_error {
 
 struct Variable {
   ast::VariableType type;
-  std::optional<ast::VariableValue> value;
+  ast::VariableValue value;
 
   Variable& operator=(const Variable& other) = default;
   Variable& operator=(Variable&& other) = default;
@@ -54,7 +54,7 @@ class VariableDefinition : public Instruction {
  public:
   inline explicit VariableDefinition(
       ast::VariableType type, std::string name,
-      std::optional<ast::Constant> initial_value) noexcept
+      std::optional<ast::VariableValue> initial_value) noexcept
       : type_{type},
         name_{std::move(name)},
         initial_value_{std::move(initial_value)} {}
@@ -63,7 +63,7 @@ class VariableDefinition : public Instruction {
  private:
   ast::VariableType type_;
   std::string name_;
-  std::optional<ast::Constant> initial_value_;
+  std::optional<ast::VariableValue> initial_value_;
 };
 
 class Write : public Instruction {

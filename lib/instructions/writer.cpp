@@ -4,15 +4,20 @@ namespace interpreter::instructions {
 
 void InstructionsWriter::VisitProgram() {}
 
-void InstructionsWriter::VisitDescriptions() {}
+void InstructionsWriter::VisitDeclarations() {}
 
 void InstructionsWriter::VisitOperators() {}
 
 void InstructionsWriter::VisitVariableDeclaration(
     ast::VariableType type, std::string&& name,
     std::optional<ast::Constant>&& initial_value) {
+  // TODO: looks wierd
+  std::optional<ast::VariableValue> value;
+  if (initial_value != std::nullopt) {
+    value = std::move(initial_value->value);
+  }
   instructions_.push_back(std::make_unique<VariableDefinition>(
-      VariableDefinition{type, std::move(name), std::move(initial_value)}));
+      VariableDefinition{type, std::move(name), std::move(value)}));
 }
 
 void InstructionsWriter::VisitRead(std::string&& name) {

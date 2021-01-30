@@ -2,21 +2,11 @@
 
 #include <iostream>
 
+#include "interpreter/ast/types.hpp"
 #include "interpreter/ast/types_helpers.hpp"
 #include "interpreter/utils/format.hpp"
 
 namespace interpreter::instructions {
-
-namespace {
-
-template <typename T>
-[[nodiscard]] T ReadValue(std::istream& input) {
-  T value;
-  input >> value;
-  return value;
-}
-
-}  // namespace
 
 void InstructionsBlock::Execute(ExecutionContext& context) const {
   for (const auto& instruction : instructions_) {
@@ -31,11 +21,17 @@ void VariableDefinition::Execute(ExecutionContext& context) const {
   }
 
   if (initial_value_ != std::nullopt) {
-    const auto& constant = *initial_value_;
-    std::visit(ast::TypeChecker{type_}, constant.value);
-    context.variables[name_] = Variable{type_, constant.value};
+    const auto& value = *initial_value_;
+    std::visit(ast::TypeChecker{type_}, value);
+    context.variables[name_] = Variable{type_, value};
   } else {
-    context.variables[name_] = Variable{type_, std::nullopt};
+    context.variables[name_] = Variable{
+        type_, ast::VisitType(
+                   []<typename T>(utils::TypeTag<T>) -> ast::VariableValue {
+                     // init by default value
+                     return T{};
+                   },
+                   type_)};
   }
 }
 
@@ -48,14 +44,8 @@ void Write::Execute(ExecutionContext& context) const {
     }
 
   const auto& variable = var_it->second;
-  const auto& opt_value = variable.value;
-  if (opt_value == std::nullopt) [[unlikely]] {
-      throw RuntimeError{utils::format(
-          "Failed to write variable '{}', it is not defined.", variable_name_)};
-    }
-
-  const auto& value = *opt_value;
-  std::visit([&context](const auto& value) { context.output << value; }, value);
+  std::visit([&context](const auto& value) { context.output << value; },
+             variable.value);
 }
 
 void Read::Execute(ExecutionContext& context) const {
@@ -66,17 +56,8 @@ void Read::Execute(ExecutionContext& context) const {
   }
 
   auto& variable = var_it->second;
-  auto& opt_value = variable.value;
-  if (opt_value != std::nullopt) {
-    std::visit([&context](auto& value) { context.input >> value; }, *opt_value);
-  } else {
-    variable.value = ast::VisitType(variable.type)(
-        [&context]<typename T>(utils::TypeTag<T>) -> ast::VariableValue {
-          T value;
-          context.input >> value;
-          return value;
-        });
-  }
+  std::visit([&context](auto& value) { context.input >> value; },
+             variable.value);
 }
 
 }  // namespace interpreter::instructions

@@ -1,9 +1,6 @@
 #pragma once
 
-#include <array>
 #include <cstdint>
-#include <functional>
-#include <stdexcept>
 #include <string>
 #include <variant>
 
@@ -79,13 +76,6 @@ template <typename T>
 struct EnumByType {
   static constexpr VariableType value =
       utils::MapType<details::VarTypeTag<T>>::type::value;
-};
-
-// TODO: It should be in visitor.hpp. Moving is blocked,
-// because instructions.hpp is using this structure.
-struct Constant {
-  VariableType type;
-  VariableValue value;
 };
 
 }  // namespace interpreter::ast

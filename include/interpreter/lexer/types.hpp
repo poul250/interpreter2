@@ -50,31 +50,25 @@ enum class LexType {
   SEMICOLON,
   COMMA,
 
-  // Assign operation
-
-  ASSIGN,
-
-  // arithmetical operations
-
   _ARITHMETICAL_OPS_START,
-  DIV,
+  ASSIGN,
+  PLUS,
   MINUS,
+  DIV,
   MOD,
   MUL,
-  PLUS,
-
-  // logical operations
-
   _LOGICAL_OPS_START,
   NOT,
   AND,
   OR,
+  _COMPARE_OPS_START,
   LT,  // <
   LE,  // <=
   GT,  // >
   GE,  // >=
   EQ,  // ==
   NE,  // !=
+  _COMPARE_OPS_END,
   _LOGICAL_OPS_END,
   _ARITHMETICAL_OPS_END,
 };
@@ -99,6 +93,10 @@ enum class LexType {
 
 [[nodiscard]] constexpr bool IsBoolean(LexType type) noexcept {
   return type == LexType::FALSE || type == LexType::TRUE;
+}
+
+[[nodiscard]] constexpr bool IsCompare(LexType type) noexcept {
+  return LexType::_COMPARE_OPS_START < type && type < LexType::_COMPARE_OPS_END;
 }
 
 }  // namespace interpreter::lexer
