@@ -1,4 +1,4 @@
-#include "interpreter/lexer/lexems.hpp"
+#include "interpreter/lexer/lexer.hpp"
 
 #include <functional>
 #include <iostream>
@@ -8,57 +8,57 @@
 
 #include "interpreter/utils/format.hpp"
 
-namespace interpreter::lexems {
+namespace interpreter::lexer {
 
 namespace {
 
-const std::unordered_map<std::string, Type> STRING_TO_TYPE = {
-    {"and", Type::AND},
-    {"boolean", Type::TYPE_BOOL},
-    {"break", Type::BREAK},
-    {"case", Type::CASE},
-    {"continue", Type::CONTINUE},
-    {"do", Type::DO},
-    {"else", Type::ELSE},
-    {"end", Type::END},
-    {"false", Type::FALSE},
-    {"for", Type::FOR},
-    {"if", Type::IF},
-    {"int", Type::TYPE_INT},
-    {"not", Type::NOT},
-    {"of", Type::OF},
-    {"or", Type::OR},
-    {"program", Type::PROGRAM},
-    {"read", Type::READ},
-    {"real", Type::TYPE_REAL},
-    {"string", Type::TYPE_STR},
-    {"true", Type::TRUE},
-    {"while", Type::WHILE},
-    {"write", Type::WRITE},
+const std::unordered_map<std::string, LexType> STRING_TO_TYPE = {
+    {"and", LexType::AND},
+    {"boolean", LexType::TYPE_BOOL},
+    {"break", LexType::BREAK},
+    {"case", LexType::CASE},
+    {"continue", LexType::CONTINUE},
+    {"do", LexType::DO},
+    {"else", LexType::ELSE},
+    {"end", LexType::END},
+    {"false", LexType::FALSE},
+    {"for", LexType::FOR},
+    {"if", LexType::IF},
+    {"int", LexType::TYPE_INT},
+    {"not", LexType::NOT},
+    {"of", LexType::OF},
+    {"or", LexType::OR},
+    {"program", LexType::PROGRAM},
+    {"read", LexType::READ},
+    {"real", LexType::TYPE_REAL},
+    {"string", LexType::TYPE_STR},
+    {"true", LexType::TRUE},
+    {"while", LexType::WHILE},
+    {"write", LexType::WRITE},
 
-    {"!=", Type::NE},
-    {"==", Type::EQ},
-    {"<=", Type::LE},
-    {">=", Type::GE},
+    {"!=", LexType::NE},
+    {"==", LexType::EQ},
+    {"<=", LexType::LE},
+    {">=", LexType::GE},
 };
 
 const std::unordered_set<char> COMPLEX_CHARS = {'!', '=', '<', '>', '/'};
 
-const std::unordered_map<char, Type> SINGLE_CHAR = {
-    {'=', Type::ASSIGN},
-    {'<', Type::LT},
-    {'>', Type::GT},
-    {'/', Type::DIV},
-    {'+', Type::PLUS},
-    {'-', Type::MINUS},
-    {'%', Type::MOD},
-    {'*', Type::MUL},
-    {';', Type::SEMICOLON},
-    {',', Type::COMMA},
-    {'{', Type::OPENING_BRACE},
-    {'}', Type::CLOSING_BRACE},
-    {'(', Type::OPENING_PARENTHESIS},
-    {')', Type::CLOSING_PARENTHESIS},
+const std::unordered_map<char, LexType> SINGLE_CHAR = {
+    {'=', LexType::ASSIGN},
+    {'<', LexType::LT},
+    {'>', LexType::GT},
+    {'/', LexType::DIV},
+    {'+', LexType::PLUS},
+    {'-', LexType::MINUS},
+    {'%', LexType::MOD},
+    {'*', LexType::MUL},
+    {';', LexType::SEMICOLON},
+    {',', LexType::COMMA},
+    {'{', LexType::OPENING_BRACE},
+    {'}', LexType::CLOSING_BRACE},
+    {'(', LexType::OPENING_PARENTHESIS},
+    {')', LexType::CLOSING_PARENTHESIS},
 };
 
 [[nodiscard]] constexpr bool IsLiteral(char ch) noexcept {
@@ -181,7 +181,7 @@ Lexer::StateResult Lexer::ComplexOp(char ch) {
     if (ch == '/') return {&Lexer::LineComment};
     if (ch == '*') return {&Lexer::ManyLineCommentStar};
 
-    return {&Lexer::Idle, true, Lexeme{Type::DIV}};
+    return {&Lexer::Idle, true, Lexeme{LexType::DIV}};
   }
 
   std::string complex_op = std::string{prev_ch_} + ch;
@@ -202,7 +202,7 @@ Lexer::StateResult Lexer::ReadWord(char ch) {
     if (it != STRING_TO_TYPE.end()) {
       return {&Lexer::Idle, !eof_, Lexeme{it->second}};
     }
-    return {&Lexer::Idle, !eof_, Lexeme{Type::ID, std::move(buf_)}};
+    return {&Lexer::Idle, !eof_, Lexeme{LexType::ID, std::move(buf_)}};
   }
 
   buf_ += ch;
@@ -211,7 +211,7 @@ Lexer::StateResult Lexer::ReadWord(char ch) {
 
 Lexer::StateResult Lexer::ReadInteger(char ch) {
   if (eof_) {
-    return {&Lexer::Idle, false, Lexeme{Type::VALUE_INT, std::stoi(buf_)}};
+    return {&Lexer::Idle, false, Lexeme{LexType::VALUE_INT, std::stoi(buf_)}};
   }
 
   if (isdigit(ch)) {
@@ -228,19 +228,19 @@ Lexer::StateResult Lexer::ReadInteger(char ch) {
     throw LexicalError{"Unexpected symbol"};
   }
 
-  return {&Lexer::Idle, true, Lexeme{Type::VALUE_INT, std::stoi(buf_)}};
+  return {&Lexer::Idle, true, Lexeme{LexType::VALUE_INT, std::stoi(buf_)}};
 }
 
 Lexer::StateResult Lexer::ReadReal(char ch) {
   if (eof_)
-    return {&Lexer::Idle, false, Lexeme{Type::VALUE_INT, std::stod(buf_)}};
+    return {&Lexer::Idle, false, Lexeme{LexType::VALUE_INT, std::stod(buf_)}};
 
   if (isdigit(ch)) {
     buf_ += ch;
     return {&Lexer::ReadReal};
   }
 
-  return {&Lexer::Idle, true, Lexeme{Type::VALUE_REAL, std::stod(buf_)}};
+  return {&Lexer::Idle, true, Lexeme{LexType::VALUE_REAL, std::stod(buf_)}};
 }
 
 Lexer::StateResult Lexer::ReadString(char ch) {
@@ -248,7 +248,7 @@ Lexer::StateResult Lexer::ReadString(char ch) {
   if (ch == '\n') throw LexicalError("Unexpected end of line");
 
   if (ch == '"') {
-    return {&Lexer::Idle, false, Lexeme{Type::VALUE_STR, std::move(buf_)}};
+    return {&Lexer::Idle, false, Lexeme{LexType::VALUE_STR, std::move(buf_)}};
   }
 
   buf_ += ch;
@@ -285,7 +285,7 @@ utils::generator<Lexeme> ParseLexems(std::istream& input) {
   do {
     lex = lexer.GetNext();
     co_yield lex;
-  } while (lex.type != Type::NONE);
+  } while (lex.type != LexType::NONE);
 }
 
-}  // namespace interpreter::lexems
+}  // namespace interpreter::lexer

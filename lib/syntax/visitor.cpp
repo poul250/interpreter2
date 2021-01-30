@@ -3,7 +3,7 @@
 #include <iostream>
 #include <unordered_map>
 
-#include "interpreter/lexer/lexems.hpp"
+#include "interpreter/lexer/lexer.hpp"
 
 namespace interpreter::syntax {
 
@@ -11,9 +11,9 @@ namespace {
 
 enum class ParseResult { SUCCESS, FAILURE };
 
-// TODO: Is it good mapping?
-[[nodiscard]] VariableType MapLexType2Type(lexems::Type type) {
-  using LexType = ::interpreter::lexems::Type;
+// TODO: Is
+[[nodiscard]] VariableType MapLexType2Type(lexer::LexType type) {
+  using LexType = lexer::LexType;
 
   if (type == LexType::TYPE_INT) return VariableType::INT;
   if (type == LexType::TYPE_REAL) return VariableType::REAL;
@@ -23,8 +23,8 @@ enum class ParseResult { SUCCESS, FAILURE };
   throw SyntaxError{"Unexpected lexeme"};
 }
 
-[[nodiscard]] VariableType MapLexValue2Type(lexems::Type type) {
-  using LexType = ::interpreter::lexems::Type;
+[[nodiscard]] VariableType MapLexValue2Type(lexer::LexType type) {
+  using LexType = ::interpreter::lexer::LexType;
 
   if (type == LexType::VALUE_INT) return VariableType::INT;
   if (type == LexType::VALUE_REAL) return VariableType::REAL;
@@ -35,8 +35,8 @@ enum class ParseResult { SUCCESS, FAILURE };
   throw SyntaxError{"Unexpected lexeme"};
 }
 
-inline const lexems::Lexeme& Validated(const lexems::Lexeme& lexeme,
-                                       lexems::Type required_type) {
+inline const lexer::Lexeme& Validated(const lexer::Lexeme& lexeme,
+                                       lexer::LexType required_type) {
   // TODO: looks like clang-format bug, fix this
   if (lexeme.type != required_type) [[unlikely]] {
       throw SyntaxError{"Unexpected Lexeme"};
@@ -45,7 +45,7 @@ inline const lexems::Lexeme& Validated(const lexems::Lexeme& lexeme,
 }
 
 template <typename TPredicate>
-inline const lexems::Lexeme& Validated(const lexems::Lexeme& lexeme,
+inline const lexer::Lexeme& Validated(const lexer::Lexeme& lexeme,
                                        TPredicate&& predicate) {
   if (!predicate(lexeme.type)) [[unlikely]] {
       throw SyntaxError{"Unexpected Lexeme"};
@@ -55,15 +55,15 @@ inline const lexems::Lexeme& Validated(const lexems::Lexeme& lexeme,
 
 class ConstantParser {
  public:
-  explicit constexpr ConstantParser(const lexems::Type type) noexcept
+  explicit constexpr ConstantParser(const lexer::LexType type) noexcept
       : type_{type} {}
 
   [[nodiscard]] Constant operator()(const std::monostate&) const {
-    if (!lexems::IsBoolean(type_)) [[unlikely]] {
+    if (!lexer::IsBoolean(type_)) [[unlikely]] {
         throw SyntaxError{"Value lexeme should have value"};
       }
     else {
-      return {VariableType::BOOL, type_ == lexems::Type::TRUE};
+      return {VariableType::BOOL, type_ == lexer::LexType::TRUE};
     }
   }
 
@@ -73,33 +73,33 @@ class ConstantParser {
   }
 
  private:
-  const lexems::Type type_;
+  const lexer::LexType type_;
 };
 
 class ModelReader {
  public:
   explicit ModelReader(std::istream& code, ModelVisitor& visitor)
-      : lex_generator_{lexems::ParseLexems(code)}, visitor_{visitor} {
+      : lex_generator_{lexer::ParseLexems(code)}, visitor_{visitor} {
     current_lex_it_ = lex_generator_.begin();
   }
 
   void VisitProgram() {
-    ValidatedCurrentLex(lexems::Type::PROGRAM);
-    ValidatedMoveNextLex(lexems::Type::OPENING_BRACE);
+    ValidatedCurrentLex(lexer::LexType::PROGRAM);
+    ValidatedMoveNextLex(lexer::LexType::OPENING_BRACE);
     visitor_.VisitProgram();
 
     MoveNextLex();
     VisitDescriptions();
     VisitOperators();
 
-    ValidatedCurrentLex(lexems::Type::CLOSING_BRACE);
+    ValidatedCurrentLex(lexer::LexType::CLOSING_BRACE);
   }
 
   Constant GetConstant() {
-    const auto& constant = ValidatedCurrentLex(lexems::IsConstant);
-    if (constant.type == lexems::Type::FALSE ||
-        constant.type == lexems::Type::TRUE) {
-      return {VariableType::BOOL, constant.type == lexems::Type::TRUE};
+    const auto& constant = ValidatedCurrentLex(lexer::IsConstant);
+    if (constant.type == lexer::LexType::FALSE ||
+        constant.type == lexer::LexType::TRUE) {
+      return {VariableType::BOOL, constant.type == lexer::LexType::TRUE};
     }
 
     const auto current_lex = CurrentLex();
@@ -109,11 +109,11 @@ class ModelReader {
   }
 
   void VisitVariableDeclaration(VariableType variable_type) {
-    const auto& variable_name_lex = ValidatedCurrentLex(lexems::Type::ID);
+    const auto& variable_name_lex = ValidatedCurrentLex(lexer::LexType::ID);
     auto variable_name = std::get<std::string>(variable_name_lex.data);
 
     std::optional<Constant> default_value;
-    if (MoveNextLex().type == lexems::Type::ASSIGN) {
+    if (MoveNextLex().type == lexer::LexType::ASSIGN) {
       MoveNextLex();
       default_value.emplace(GetConstant());
     }
@@ -124,7 +124,7 @@ class ModelReader {
 
   ParseResult VisitDescription() {
     const auto lex_type = CurrentLex().type;
-    if (!lexems::IsVariableType(lex_type)) [[unlikely]] {
+    if (!lexer::IsVariableType(lex_type)) [[unlikely]] {
         return ParseResult::FAILURE;
       }
     const auto variable_type = MapLexType2Type(lex_type);
@@ -132,7 +132,7 @@ class ModelReader {
     do {
       MoveNextLex();
       VisitVariableDeclaration(variable_type);
-    } while (CurrentLex().type == lexems::Type::COMMA);
+    } while (CurrentLex().type == lexer::LexType::COMMA);
 
     return ParseResult::SUCCESS;
   }
@@ -141,42 +141,42 @@ class ModelReader {
     visitor_.VisitDescriptions();
 
     while (VisitDescription() == ParseResult::SUCCESS) {
-      ValidatedCurrentLex(lexems::Type::SEMICOLON);
+      ValidatedCurrentLex(lexer::LexType::SEMICOLON);
       MoveNextLex();
     }
   }
 
   ParseResult VisitRead() {
-    if (CurrentLex().type != lexems::Type::READ) {
+    if (CurrentLex().type != lexer::LexType::READ) {
       return ParseResult::FAILURE;
     }
 
-    ValidatedMoveNextLex(lexems::Type::OPENING_PARENTHESIS);
+    ValidatedMoveNextLex(lexer::LexType::OPENING_PARENTHESIS);
 
     auto variable_name =
-        std::get<std::string>(ValidatedMoveNextLex(lexems::Type::ID).data);
+        std::get<std::string>(ValidatedMoveNextLex(lexer::LexType::ID).data);
     visitor_.VisitRead(std::move(variable_name));
 
-    ValidatedMoveNextLex(lexems::Type::CLOSING_PARENTHESIS);
-    ValidatedMoveNextLex(lexems::Type::SEMICOLON);
+    ValidatedMoveNextLex(lexer::LexType::CLOSING_PARENTHESIS);
+    ValidatedMoveNextLex(lexer::LexType::SEMICOLON);
 
     MoveNextLex();
     return ParseResult::SUCCESS;
   }
 
   ParseResult VisitWrite() {
-    if (CurrentLex().type != lexems::Type::WRITE) {
+    if (CurrentLex().type != lexer::LexType::WRITE) {
       return ParseResult::FAILURE;
     }
 
-    ValidatedMoveNextLex(lexems::Type::OPENING_PARENTHESIS);
+    ValidatedMoveNextLex(lexer::LexType::OPENING_PARENTHESIS);
     // TODO: list of expressions here please
     auto variable_name =
-        std::get<std::string>(ValidatedMoveNextLex(lexems::Type::ID).data);
+        std::get<std::string>(ValidatedMoveNextLex(lexer::LexType::ID).data);
     visitor_.VisitWrite(std::move(variable_name));
 
-    ValidatedMoveNextLex(lexems::Type::CLOSING_PARENTHESIS);
-    ValidatedMoveNextLex(lexems::Type::SEMICOLON);
+    ValidatedMoveNextLex(lexer::LexType::CLOSING_PARENTHESIS);
+    ValidatedMoveNextLex(lexer::LexType::SEMICOLON);
 
     MoveNextLex();
     return ParseResult::SUCCESS;
@@ -202,31 +202,31 @@ class ModelReader {
   }
 
  private:
-  inline const lexems::Lexeme& CurrentLex() { return *current_lex_it_; }
+  inline const lexer::Lexeme& CurrentLex() { return *current_lex_it_; }
 
-  inline const lexems::Lexeme& ValidatedCurrentLex(lexems::Type required_type) {
+  inline const lexer::Lexeme& ValidatedCurrentLex(lexer::LexType required_type) {
     return Validated(*current_lex_it_, required_type);
   }
 
   template <typename TPredicate>
-  inline const lexems::Lexeme& ValidatedCurrentLex(TPredicate&& predicate) {
+  inline const lexer::Lexeme& ValidatedCurrentLex(TPredicate&& predicate) {
     return Validated(*current_lex_it_, std::forward<TPredicate>(predicate));
   }
 
-  inline const lexems::Lexeme& MoveNextLex() { return *(++current_lex_it_); }
+  inline const lexer::Lexeme& MoveNextLex() { return *(++current_lex_it_); }
 
-  inline const lexems::Lexeme& ValidatedMoveNextLex(
-      lexems::Type required_type) {
+  inline const lexer::Lexeme& ValidatedMoveNextLex(
+      lexer::LexType required_type) {
     return Validated(*(++current_lex_it_), required_type);
   }
 
   template <typename TPredicate>
-  inline const lexems::Lexeme& ValidatedMoveNextLex(TPredicate&& predicate) {
+  inline const lexer::Lexeme& ValidatedMoveNextLex(TPredicate&& predicate) {
     return Validated(*(++current_lex_it_), std::forward<TPredicate>(predicate));
   }
 
-  utils::generator<lexems::Lexeme> lex_generator_;
-  utils::generator<lexems::Lexeme>::iterator current_lex_it_;
+  utils::generator<lexer::Lexeme> lex_generator_;
+  utils::generator<lexer::Lexeme>::iterator current_lex_it_;
   ModelVisitor& visitor_;
 };
 

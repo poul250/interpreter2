@@ -22,7 +22,7 @@ struct Variable {
   Variable& operator=(const Variable& other) = default;
   Variable& operator=(Variable&& other) = default;
 
-  [[nodiscard]] bool operator==(const Variable& other) const = default;
+  [[nodiscard]] constexpr bool operator==(const Variable& other) const = default;
 };
 
 struct ExecutionContext {

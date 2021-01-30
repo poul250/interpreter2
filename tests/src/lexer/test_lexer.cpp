@@ -2,12 +2,11 @@
 
 #include <sstream>
 
-#include "interpreter/lexer/lexems.hpp"
-#include "interpreter/lexer/types.hpp"
+#include "interpreter/lexer/lexer.hpp"
 
 namespace test {
 
-using namespace interpreter::lexems;
+using namespace interpreter::lexer;
 
 namespace {
 
@@ -32,14 +31,14 @@ void JustParse(const std::string& program) {
 
 }  // namespace
 
-TEST(TestLexer, TestEmpty) { MakeTestLexer("", {{Type::NONE}}); }
+TEST(TestLexer, TestEmpty) { MakeTestLexer("", {{LexType::NONE}}); }
 
 TEST(TestLexer, SimpleTest) {
   MakeTestLexer(R"(program{})",  //
-                {{Type::PROGRAM},
-                 {Type::OPENING_BRACE},
-                 {Type::CLOSING_BRACE},
-                 {Type::NONE}});
+                {{LexType::PROGRAM},
+                 {LexType::OPENING_BRACE},
+                 {LexType::CLOSING_BRACE},
+                 {LexType::NONE}});
 }
 
 TEST(TestLexer, TestSpaces) {
@@ -47,10 +46,10 @@ TEST(TestLexer, TestSpaces) {
       R"(
          program   {
     }   )",
-      {{Type::PROGRAM},
-       {Type::OPENING_BRACE},
-       {Type::CLOSING_BRACE},
-       {Type::NONE}});
+      {{LexType::PROGRAM},
+       {LexType::OPENING_BRACE},
+       {LexType::CLOSING_BRACE},
+       {LexType::NONE}});
 }
 
 TEST(TestLexer, TestDeclarations) {
@@ -58,31 +57,31 @@ TEST(TestLexer, TestDeclarations) {
       R"(
       int x, y =10;
     )",
-      {{Type::TYPE_INT},
-       {Type::ID, "x"},
-       {Type::COMMA},
-       {Type::ID, "y"},
-       {Type::ASSIGN},
-       {Type::VALUE_INT, 10},
-       {Type::SEMICOLON},
-       {Type::NONE}});
+      {{LexType::TYPE_INT},
+       {LexType::ID, "x"},
+       {LexType::COMMA},
+       {LexType::ID, "y"},
+       {LexType::ASSIGN},
+       {LexType::VALUE_INT, 10},
+       {LexType::SEMICOLON},
+       {LexType::NONE}});
 
   MakeTestLexer(
       R"(
         real abc= 123.4; 
         int x = 54321 ;
       )",
-      {{Type::TYPE_REAL},
-       {Type::ID, "abc"},
-       {Type::ASSIGN},
-       {Type::VALUE_REAL, 123.4},
-       {Type::SEMICOLON},
-       {Type::TYPE_INT},
-       {Type::ID, "x"},
-       {Type::ASSIGN},
-       {Type::VALUE_INT, 54321},
-       {Type::SEMICOLON},
-       {Type::NONE}});
+      {{LexType::TYPE_REAL},
+       {LexType::ID, "abc"},
+       {LexType::ASSIGN},
+       {LexType::VALUE_REAL, 123.4},
+       {LexType::SEMICOLON},
+       {LexType::TYPE_INT},
+       {LexType::ID, "x"},
+       {LexType::ASSIGN},
+       {LexType::VALUE_INT, 54321},
+       {LexType::SEMICOLON},
+       {LexType::NONE}});
 }
 
 TEST(TestLexer, UnexpectedSymbols) {

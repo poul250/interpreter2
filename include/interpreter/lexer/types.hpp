@@ -1,8 +1,8 @@
 #pragma once
 
-namespace interpreter::lexems {
+namespace interpreter::lexer {
 
-enum class Type {
+enum class LexType {
   NONE = 0,
   ID,
 
@@ -79,26 +79,26 @@ enum class Type {
   _ARITHMETICAL_OPS_END,
 };
 
-[[nodiscard]] constexpr bool IsVariableType(Type type) noexcept {
-  return Type::_TYPE_START < type && type < Type::_TYPE_END;
+[[nodiscard]] constexpr bool IsVariableType(LexType type) noexcept {
+  return LexType::_TYPE_START < type && type < LexType::_TYPE_END;
 }
 
-[[nodiscard]] constexpr bool IsLogicalOperation(Type type) noexcept {
-  return Type::_LOGICAL_OPS_START < type && type < Type::_LOGICAL_OPS_END;
+[[nodiscard]] constexpr bool IsLogicalOperation(LexType type) noexcept {
+  return LexType::_LOGICAL_OPS_START < type && type < LexType::_LOGICAL_OPS_END;
 }
 
-[[nodiscard]] constexpr bool IsArithmeticalOperation(Type type) noexcept {
-  return Type::_ARITHMETICAL_OPS_START < type &&
-         type < Type::_ARITHMETICAL_OPS_END;
+[[nodiscard]] constexpr bool IsArithmeticalOperation(LexType type) noexcept {
+  return LexType::_ARITHMETICAL_OPS_START < type &&
+         type < LexType::_ARITHMETICAL_OPS_END;
 }
 
-[[nodiscard]] constexpr bool IsConstant(Type type) noexcept {
-  return (Type::_VALUES_START < type && type < Type::_VALUES_END) ||
-         type == Type::FALSE || type == Type::TRUE;
+[[nodiscard]] constexpr bool IsConstant(LexType type) noexcept {
+  return (LexType::_VALUES_START < type && type < LexType::_VALUES_END) ||
+         type == LexType::FALSE || type == LexType::TRUE;
 }
 
-[[nodiscard]] constexpr bool IsBoolean(Type type) noexcept {
-  return type == Type::FALSE || type == Type::TRUE;
+[[nodiscard]] constexpr bool IsBoolean(LexType type) noexcept {
+  return type == LexType::FALSE || type == LexType::TRUE;
 }
 
 }  // namespace interpreter::lexems

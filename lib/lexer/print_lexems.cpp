@@ -1,61 +1,61 @@
 #include <iostream>
 #include <unordered_map>
 
-#include "interpreter/lexer/lexems.hpp"
+#include "interpreter/lexer/lexeme.hpp"
 
-namespace interpreter::lexems {
+namespace interpreter::lexer {
 
 std::ostream& operator<<(std::ostream& out, const Lexeme& lexeme) {
-  static const std::unordered_map<Type, std::string> words = {
-      {Type::AND, "and"},
-      {Type::ASSIGN, "="},
-      {Type::BREAK, "break"},
-      {Type::CASE, "case"},
-      {Type::CLOSING_BRACE, "}"},
-      {Type::CLOSING_PARENTHESIS, ")"},
-      {Type::COMMA, ","},
-      {Type::CONTINUE, "continue"},
-      {Type::DIV, "/"},
-      {Type::DO, "do"},
-      {Type::ELSE, "else"},
-      {Type::END, "end"},
-      {Type::EQ, "=="},
-      {Type::FALSE, "false"},
-      {Type::FOR, "for"},
-      {Type::GE, ">="},
-      {Type::GT, ">"},
-      {Type::IF, "if"},
-      {Type::LE, "<="},
-      {Type::LT, "<"},
-      {Type::MINUS, "-"},
-      {Type::MOD, "%"},
-      {Type::MUL, "*"},
-      {Type::NE, "!="},
-      {Type::NOT, "not"},
-      {Type::NONE, "<none>"},
-      {Type::OF, "of"},
-      {Type::OPENING_BRACE, "{"},
-      {Type::OPENING_PARENTHESIS, "("},
-      {Type::OR, "or"},
-      {Type::PLUS, "+"},
-      {Type::PROGRAM, "program"},
-      {Type::READ, "read"},
-      {Type::SEMICOLON, ";"},
-      {Type::TYPE_BOOL, "boolean"},
-      {Type::TYPE_INT, "int"},
-      {Type::TYPE_REAL, "real"},
-      {Type::TYPE_STR, "string"},
-      {Type::TRUE, "true"},
-      {Type::WHILE, "while"},
-      {Type::WRITE, "write"},
+  static const std::unordered_map<LexType, std::string> words = {
+      {LexType::AND, "and"},
+      {LexType::ASSIGN, "="},
+      {LexType::BREAK, "break"},
+      {LexType::CASE, "case"},
+      {LexType::CLOSING_BRACE, "}"},
+      {LexType::CLOSING_PARENTHESIS, ")"},
+      {LexType::COMMA, ","},
+      {LexType::CONTINUE, "continue"},
+      {LexType::DIV, "/"},
+      {LexType::DO, "do"},
+      {LexType::ELSE, "else"},
+      {LexType::END, "end"},
+      {LexType::EQ, "=="},
+      {LexType::FALSE, "false"},
+      {LexType::FOR, "for"},
+      {LexType::GE, ">="},
+      {LexType::GT, ">"},
+      {LexType::IF, "if"},
+      {LexType::LE, "<="},
+      {LexType::LT, "<"},
+      {LexType::MINUS, "-"},
+      {LexType::MOD, "%"},
+      {LexType::MUL, "*"},
+      {LexType::NE, "!="},
+      {LexType::NOT, "not"},
+      {LexType::NONE, "<none>"},
+      {LexType::OF, "of"},
+      {LexType::OPENING_BRACE, "{"},
+      {LexType::OPENING_PARENTHESIS, "("},
+      {LexType::OR, "or"},
+      {LexType::PLUS, "+"},
+      {LexType::PROGRAM, "program"},
+      {LexType::READ, "read"},
+      {LexType::SEMICOLON, ";"},
+      {LexType::TYPE_BOOL, "boolean"},
+      {LexType::TYPE_INT, "int"},
+      {LexType::TYPE_REAL, "real"},
+      {LexType::TYPE_STR, "string"},
+      {LexType::TRUE, "true"},
+      {LexType::WHILE, "while"},
+      {LexType::WRITE, "write"},
   };
 
   const auto type = lexeme.type;
 
   if (words.contains(type)) {
     out << words.at(type);
-  } else if (type == Type::VALUE_STR || type == Type::VALUE_INT ||
-             type == Type::VALUE_REAL || type == Type::ID) {
+  } else if (type == LexType::VALUE_STR || type == LexType::VALUE_INT ||
+             type == LexType::VALUE_REAL || type == LexType::ID) {
     std::visit(
         [&out](const auto& val) {
           if constexpr (!std::is_same_v<std::decay_t<decltype(val)>,
@@ -71,4 +71,4 @@ std::ostream& operator<<(std::ostream& out, const Lexeme& lexeme) {
   return out;
 }
 
-}  // namespace interpreter::lexems
+}  // namespace interpreter::lexer
