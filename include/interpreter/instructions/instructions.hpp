@@ -39,6 +39,7 @@ class Instruction {
 
 class InstructionsBlock : public Instruction {
  public:
+  // TODO: should it be shared_ptr?
   inline explicit InstructionsBlock(
       std::vector<std::unique_ptr<Instruction>> instructions)
       : instructions_{std::move(instructions)} {}

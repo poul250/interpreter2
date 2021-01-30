@@ -1,5 +1,8 @@
 #pragma once
 
+#include <iosfwd>
+#include <stdexcept>
+
 #include "interpreter/utils/generator.hpp"
 
 #include "lexeme.hpp"

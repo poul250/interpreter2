@@ -12,19 +12,18 @@ struct EnumValueTag {
   static constexpr EnumType value = EnumValue;
 };
 
-template <typename>
-struct DeclareType {
-  friend constexpr auto _Get(DeclareType);
-};
-
-template <typename A, typename T>
-struct AddMapping {
-  friend constexpr auto _Get(A) { return T{}; }
+template <typename T>
+struct IntegralTypeTraits {
+  using ValueType = T;
+  using Reference = T&;
+  using ConstReference = T;
 };
 
 template <typename T>
-struct MapType {
-  using type = decltype(_Get(DeclareType<T>{}));
+struct NonIntegralTypeTraits {
+  using ValueType = T;
+  using Reference = T&;
+  using ConstReference = const T&;
 };
 
 }  // namespace interpreter::utils

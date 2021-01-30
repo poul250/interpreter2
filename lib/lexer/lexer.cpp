@@ -1,6 +1,5 @@
 #include "interpreter/lexer/lexer.hpp"
 
-#include <functional>
 #include <iostream>
 #include <optional>
 #include <unordered_map>

@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include "interpreter/ast/types_helpers.hpp"
 #include "interpreter/utils/format.hpp"
 
 namespace interpreter::instructions {
