@@ -36,7 +36,7 @@ enum class ParseResult { SUCCESS, FAILURE };
 }
 
 inline const lexer::Lexeme& Validated(const lexer::Lexeme& lexeme,
-                                       lexer::LexType required_type) {
+                                      lexer::LexType required_type) {
   // TODO: looks like clang-format bug, fix this
   if (lexeme.type != required_type) [[unlikely]] {
       throw SyntaxError{"Unexpected Lexeme"};
@@ -46,7 +46,7 @@ inline const lexer::Lexeme& Validated(const lexer::Lexeme& lexeme,
 
 template <typename TPredicate>
 inline const lexer::Lexeme& Validated(const lexer::Lexeme& lexeme,
-                                       TPredicate&& predicate) {
+                                      TPredicate&& predicate) {
   if (!predicate(lexeme.type)) [[unlikely]] {
       throw SyntaxError{"Unexpected Lexeme"};
     }
@@ -204,7 +204,8 @@ class ModelReader {
  private:
   inline const lexer::Lexeme& CurrentLex() { return *current_lex_it_; }
 
-  inline const lexer::Lexeme& ValidatedCurrentLex(lexer::LexType required_type) {
+  inline const lexer::Lexeme& ValidatedCurrentLex(
+      lexer::LexType required_type) {
     return Validated(*current_lex_it_, required_type);
   }
 

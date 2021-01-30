@@ -17,7 +17,7 @@ struct DefineType {
 
 }  // namespace details
 
-template<typename From, typename To>
+template <typename From, typename To>
 using AddMapping = details::DefineType<details::DeclareType<From>, To>;
 
 template <typename T>

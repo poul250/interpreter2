@@ -101,4 +101,4 @@ enum class LexType {
   return type == LexType::FALSE || type == LexType::TRUE;
 }
 
-}  // namespace interpreter::lexems
+}  // namespace interpreter::lexer

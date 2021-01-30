@@ -4,7 +4,6 @@
 #include <stdexcept>
 
 #include "interpreter/utils/generator.hpp"
-
 #include "lexeme.hpp"
 
 namespace interpreter::lexer {

@@ -43,7 +43,8 @@ template <typename T>
 struct VarTypeTag : utils::TypeTag<T> {};
 
 template <VariableType enum_value, typename T>
-using MakeMapping = utils::AddBijectiveMapping<VarTypeEnumTag<enum_value>, VarTypeTag<T>>;
+using MakeMapping =
+    utils::AddBijectiveMapping<VarTypeEnumTag<enum_value>, VarTypeTag<T>>;
 
 }  // namespace details
 
