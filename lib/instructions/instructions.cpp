@@ -31,7 +31,7 @@ void VariableDefinition::Execute(ExecutionContext& context) const {
 
   if (initial_value_ != std::nullopt) {
     const auto& constant = *initial_value_;
-    std::visit(syntax::TypeChecker{type_}, constant.value);
+    std::visit(ast::TypeChecker{type_}, constant.value);
     context.variables[name_] = Variable{type_, constant.value};
   } else {
     context.variables[name_] = Variable{type_, std::nullopt};
@@ -69,8 +69,8 @@ void Read::Execute(ExecutionContext& context) const {
   if (opt_value != std::nullopt) {
     std::visit([&context](auto& value) { context.input >> value; }, *opt_value);
   } else {
-    variable.value = syntax::VisitType(variable.type)(
-        [&context]<typename T>(utils::TypeTag<T>) -> syntax::VariableValue {
+    variable.value = ast::VisitType(variable.type)(
+        [&context]<typename T>(utils::TypeTag<T>) -> ast::VariableValue {
           T value;
           context.input >> value;
           return value;

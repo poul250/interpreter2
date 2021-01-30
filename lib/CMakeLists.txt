@@ -8,5 +8,5 @@ target_link_libraries(${PROJECT_NAME}_LIB PRIVATE ${PROJECT_NAME}_INCLUDE)
 target_compile_options(${PROJECT_NAME}_LIB PUBLIC -fcoroutines)
 
 add_subdirectory(lexer)
-add_subdirectory(syntax)
+add_subdirectory(ast)
 add_subdirectory(instructions)

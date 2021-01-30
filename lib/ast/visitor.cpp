@@ -1,11 +1,11 @@
-#include "interpreter/syntax/visitor.hpp"
+#include "interpreter/ast/visitor.hpp"
 
 #include <iostream>
 #include <unordered_map>
 
 #include "interpreter/lexer/lexer.hpp"
 
-namespace interpreter::syntax {
+namespace interpreter::ast {
 
 namespace {
 
@@ -236,4 +236,4 @@ void VisitCode(std::istream& code, ModelVisitor& visitor) {
   ModelReader{code, visitor}.VisitProgram();
 }
 
-}  // namespace interpreter::syntax
+}  // namespace interpreter::ast

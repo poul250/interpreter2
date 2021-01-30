@@ -4,17 +4,17 @@
 #include <vector>
 
 #include "instructions.hpp"
-#include "interpreter/syntax/visitor.hpp"
+#include "interpreter/ast/visitor.hpp"
 
 namespace interpreter::instructions {
 
-class InstructionsWriter : public syntax::ModelVisitor {
+class InstructionsWriter : public ast::ModelVisitor {
  public:
   void VisitProgram() override;
   void VisitDescriptions() override;
   void VisitVariableDeclaration(
-      syntax::VariableType type, std::string&& name,
-      std::optional<syntax::Constant>&& initial_value = std::nullopt) override;
+      ast::VariableType type, std::string&& name,
+      std::optional<ast::Constant>&& initial_value = std::nullopt) override;
   void VisitRead(std::string&& name) override;
   void VisitOperators() override;
 

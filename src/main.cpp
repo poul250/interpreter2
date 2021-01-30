@@ -6,7 +6,7 @@
 // TODO: move it in library
 void interpret(std::istream& code, std::istream& input, std::ostream& output) {
   interpreter::instructions::InstructionsWriter writer;
-  interpreter::syntax::VisitCode(code, writer);
+  interpreter::ast::VisitCode(code, writer);
   const auto& instructions = writer.GetInstructions();
 
   interpreter::instructions::ExecutionContext context{

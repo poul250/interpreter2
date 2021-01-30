@@ -6,8 +6,8 @@
 #include <unordered_map>
 #include <vector>
 
-// TODO: don't include syntax/types here, make new models
-#include "interpreter/syntax/types.hpp"
+// TODO: don't include ast/types here, make new models
+#include "interpreter/ast/types.hpp"
 
 namespace interpreter::instructions {
 
@@ -16,8 +16,8 @@ struct RuntimeError : public std::runtime_error {
 };
 
 struct Variable {
-  syntax::VariableType type;
-  std::optional<syntax::VariableValue> value;
+  ast::VariableType type;
+  std::optional<ast::VariableValue> value;
 
   Variable& operator=(const Variable& other) = default;
   Variable& operator=(Variable&& other) = default;
@@ -51,17 +51,17 @@ class InstructionsBlock : public Instruction {
 class VariableDefinition : public Instruction {
  public:
   inline explicit VariableDefinition(
-      syntax::VariableType type, std::string name,
-      std::optional<syntax::Constant> initial_value) noexcept
+      ast::VariableType type, std::string name,
+      std::optional<ast::Constant> initial_value) noexcept
       : type_{type},
         name_{std::move(name)},
         initial_value_{std::move(initial_value)} {}
   void Execute(ExecutionContext& context) const override;
 
  private:
-  syntax::VariableType type_;
+  ast::VariableType type_;
   std::string name_;
-  std::optional<syntax::Constant> initial_value_;
+  std::optional<ast::Constant> initial_value_;
 };
 
 class Write : public Instruction {

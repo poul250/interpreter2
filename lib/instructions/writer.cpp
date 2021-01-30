@@ -9,8 +9,8 @@ void InstructionsWriter::VisitDescriptions() {}
 void InstructionsWriter::VisitOperators() {}
 
 void InstructionsWriter::VisitVariableDeclaration(
-    syntax::VariableType type, std::string&& name,
-    std::optional<syntax::Constant>&& initial_value) {
+    ast::VariableType type, std::string&& name,
+    std::optional<ast::Constant>&& initial_value) {
   instructions_.push_back(std::make_unique<VariableDefinition>(
       VariableDefinition{type, std::move(name), std::move(initial_value)}));
 }

@@ -6,7 +6,7 @@
 
 #include "types.hpp"
 
-namespace interpreter::syntax {
+namespace interpreter::ast {
 
 struct SyntaxError : public std::runtime_error {
   using std::runtime_error::runtime_error;
@@ -31,4 +31,4 @@ class ModelVisitor {
 // TODO: move him in another header
 void VisitCode(std::istream& code, ModelVisitor& visitor);
 
-}  // namespace interpreter::syntax
+}  // namespace interpreter::ast

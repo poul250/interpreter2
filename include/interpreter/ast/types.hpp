@@ -11,7 +11,7 @@
 #include "interpreter/utils/type_map.hpp"
 
 // TODO: move all of weird stuff in another header
-namespace interpreter::syntax {
+namespace interpreter::ast {
 
 struct TypeError : public std::runtime_error {
   using std::runtime_error::runtime_error;
@@ -173,4 +173,4 @@ struct Constant {
   VariableValue value;
 };
 
-}  // namespace interpreter::syntax
+}  // namespace interpreter::ast
