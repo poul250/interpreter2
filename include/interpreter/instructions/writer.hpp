@@ -20,6 +20,17 @@ class InstructionsWriter : public ast::ModelVisitor {
   void VisitRead(std::string&& name) override;
   // TODO: replace Variable with Expression
   void VisitWrite(std::string&& variable_name) override;
+  void VisitExpressionOperator() override;
+
+  // Expression States
+  void VisitAssign() override;
+  void VisitOr() override;
+  void VisitAnd() override;
+  void VisitCompare() override;
+  void VisitAdd() override;
+  void VisitVisitMul() override;
+  void VisitNot() override;
+  void VisitAtom() override;
 
   [[nodiscard]] inline const auto& GetInstructions() noexcept {
     return instructions_;

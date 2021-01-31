@@ -36,6 +36,17 @@ class ModelVisitor {
   virtual void VisitRead(std::string&& name) = 0;
   // TODO: replace variable_name with Expression
   virtual void VisitWrite(std::string&& variable_name) = 0;
+  virtual void VisitExpressionOperator() = 0;
+
+  // Expression states
+  virtual void VisitAssign() = 0;
+  virtual void VisitOr() = 0;
+  virtual void VisitAnd() = 0;
+  virtual void VisitCompare() = 0;
+  virtual void VisitAdd() = 0;
+  virtual void VisitVisitMul() = 0;
+  virtual void VisitNot() = 0;
+  virtual void VisitAtom() = 0;
 };
 
 // TODO: move him in another header

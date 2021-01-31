@@ -28,4 +28,15 @@ void InstructionsWriter::VisitWrite(std::string&& name) {
   instructions_.push_back(std::make_unique<Write>(Write{std::move(name)}));
 }
 
+void InstructionsWriter::VisitExpressionOperator() {}
+
+void InstructionsWriter::VisitAssign() {}
+void InstructionsWriter::VisitOr() {}
+void InstructionsWriter::VisitAnd() {}
+void InstructionsWriter::VisitCompare() {}
+void InstructionsWriter::VisitAdd() {}
+void InstructionsWriter::VisitVisitMul() {}
+void InstructionsWriter::VisitNot() {}
+void InstructionsWriter::VisitAtom() {}
+
 }  // namespace interpreter::instructions
