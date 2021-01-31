@@ -204,12 +204,13 @@ class ModelReader {
     }
 
     if (CurrentLex().type == LexType::ID) {
-      MoveNextLex();
+      std::string variable_name = std::get<std::string>(CurrentLex().data);
+      visitor_.VisitVariableInvokation(std::move(variable_name));
       return ParseResult::SUCCESS;
     }
 
     if (lexer::IsConstant(CurrentLex().type)) {
-      MoveNextLex();
+      visitor_.VisitConstantInvokation(GetConstant());
       return ParseResult::SUCCESS;
     }
 
@@ -218,6 +219,7 @@ class ModelReader {
 
   ParseResult VisitNot() {
     while (CurrentLex().type == LexType::NOT) {
+      visitor_.VisitNot();
       MoveNextLex();
     }
 
@@ -236,6 +238,7 @@ class ModelReader {
       if (VisitNot() == ParseResult::FAILURE) {
         throw ParseExpressionError{"Expression parse error"};
       }
+      visitor_.VisitMul();
     }
 
     return ParseResult::SUCCESS;
@@ -252,6 +255,7 @@ class ModelReader {
       if (VisitMul() == ParseResult::FAILURE) {
         throw ParseExpressionError{"Expression parse error"};
       }
+      visitor_.VisitAdd();
     }
 
     return ParseResult::SUCCESS;
@@ -267,6 +271,7 @@ class ModelReader {
       if (VisitAdd() == ParseResult::FAILURE) {
         throw ParseExpressionError{"Expression parse error"};
       }
+      visitor_.VisitCompare();
     }
 
     return ParseResult::SUCCESS;
@@ -282,6 +287,7 @@ class ModelReader {
       if (VisitCompare() == ParseResult::FAILURE) {
         throw ParseExpressionError{"Expression parse error"};
       }
+      visitor_.VisitAnd();
     }
 
     return ParseResult::SUCCESS;
@@ -297,6 +303,7 @@ class ModelReader {
       if (VisitAnd() == ParseResult::FAILURE) {
         throw ParseExpressionError{"Expression parse error"};
       }
+      visitor_.VisitOr();
     }
 
     return ParseResult::SUCCESS;
@@ -312,6 +319,7 @@ class ModelReader {
       if (VisitOr() == ParseResult::FAILURE) {
         throw ParseExpressionError{"Expression parse error"};
       }
+      visitor_.VisitAssign();
     }
 
     return ParseResult::SUCCESS;

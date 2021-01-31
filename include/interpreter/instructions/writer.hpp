@@ -28,9 +28,10 @@ class InstructionsWriter : public ast::ModelVisitor {
   void VisitAnd() override;
   void VisitCompare() override;
   void VisitAdd() override;
-  void VisitVisitMul() override;
+  void VisitMul() override;
   void VisitNot() override;
-  void VisitAtom() override;
+  void VisitVariableInvokation(std::string&& variable_name) override;
+  void VisitConstantInvokation(ast::Constant&& constant) override;
 
   [[nodiscard]] inline const auto& GetInstructions() noexcept {
     return instructions_;

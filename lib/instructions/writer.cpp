@@ -35,8 +35,10 @@ void InstructionsWriter::VisitOr() {}
 void InstructionsWriter::VisitAnd() {}
 void InstructionsWriter::VisitCompare() {}
 void InstructionsWriter::VisitAdd() {}
-void InstructionsWriter::VisitVisitMul() {}
+void InstructionsWriter::VisitMul() {}
 void InstructionsWriter::VisitNot() {}
-void InstructionsWriter::VisitAtom() {}
+
+void InstructionsWriter::VisitVariableInvokation(std::string&& variable_name) {}
+void InstructionsWriter::VisitConstantInvokation(ast::Constant&& constant) {}
 
 }  // namespace interpreter::instructions

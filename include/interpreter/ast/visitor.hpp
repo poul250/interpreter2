@@ -44,9 +44,11 @@ class ModelVisitor {
   virtual void VisitAnd() = 0;
   virtual void VisitCompare() = 0;
   virtual void VisitAdd() = 0;
-  virtual void VisitVisitMul() = 0;
+  virtual void VisitMul() = 0;
   virtual void VisitNot() = 0;
-  virtual void VisitAtom() = 0;
+
+  virtual void VisitVariableInvokation(std::string&& variable_name) = 0;
+  virtual void VisitConstantInvokation(Constant&& constant) = 0;
 };
 
 // TODO: move him in another header
