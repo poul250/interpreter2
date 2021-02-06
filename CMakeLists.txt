@@ -17,7 +17,6 @@ endif()
 
 # Add include interface library
 add_library(${PROJECT_NAME}_INCLUDE INTERFACE)
-set_target_properties(${PROJECT_NAME}_INCLUDE PROPERTIES CXX_STANDARD 20)
 target_include_directories(${PROJECT_NAME}_INCLUDE INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Loop holes are not warnings ;)

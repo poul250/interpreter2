@@ -1,6 +1,7 @@
 #include "interpreter/ast/visitor.hpp"
 
 #include <iostream>
+#include <ranges>
 #include <unordered_map>
 
 #include "interpreter/lexer/lexer.hpp"
@@ -14,21 +15,66 @@ using LexType = lexer::LexType;
 enum class ParseResult { SUCCESS, FAILURE };
 
 // TODO: Is that ok?
-[[nodiscard]] VariableType MapLexType2Type(LexType type) {
-  if (type == LexType::TYPE_INT) return VariableType::INT;
-  if (type == LexType::TYPE_REAL) return VariableType::REAL;
-  if (type == LexType::TYPE_STR) return VariableType::STR;
-  if (type == LexType::TYPE_BOOL) return VariableType::BOOL;
+[[nodiscard]] VariableType MapType(LexType type) {
+  switch (type) {
+    case LexType::TYPE_INT:
+      return VariableType::INT;
+    case LexType::TYPE_REAL:
+      return VariableType::REAL;
+    case LexType::TYPE_STR:
+      return VariableType::STR;
+    case LexType::TYPE_BOOL:
+      return VariableType::BOOL;
+  }
 
   throw SyntaxError{"Unexpected lexeme"};
 }
 
-[[nodiscard]] VariableType MapLexValue2Type(LexType type) {
-  if (type == LexType::VALUE_INT) return VariableType::INT;
-  if (type == LexType::VALUE_REAL) return VariableType::REAL;
-  if (type == LexType::VALUE_STR) return VariableType::STR;
-  if (type == LexType::FALSE) return VariableType::BOOL;
-  if (type == LexType::TRUE) return VariableType::BOOL;
+[[nodiscard]] VariableType MapValue(LexType type) {
+  switch (type) {
+    case LexType::VALUE_INT:
+      return VariableType::INT;
+    case LexType::VALUE_REAL:
+      return VariableType::REAL;
+    case LexType::VALUE_STR:
+      return VariableType::STR;
+    case LexType::FALSE:
+      return VariableType::BOOL;
+    case LexType::TRUE:
+      return VariableType::BOOL;
+  }
+
+  throw SyntaxError{"Unexpected lexeme"};
+}
+
+[[nodiscard]] CompareType MapCompare(LexType type) {
+  switch (type) {
+    case LexType::LT:
+      return CompareType::LT;
+    case LexType::GT:
+      return CompareType::GT;
+    case LexType::LE:
+      return CompareType::LE;
+    case LexType::GE:
+      return CompareType::GE;
+    case LexType::EQ:
+      return CompareType::EQ;
+    case LexType::NE:
+      return CompareType::NE;
+  }
+
+  throw SyntaxError{"Unexpected lexeme"};
+}
+
+[[nodiscard]] MulType MapMul(LexType type) {
+  switch (type) {
+    case LexType::MUL:
+      return MulType::MUL;
+    case LexType::DIV:
+      return MulType::DIV;
+    case LexType::MOD:
+      return MulType::MOD;
+  }
 
   throw SyntaxError{"Unexpected lexeme"};
 }
@@ -66,51 +112,51 @@ class ConstantParser {
 
   template <typename T>
   [[nodiscard]] Constant operator()(const T& value) const {
-    return {MapLexValue2Type(type_), value};
+    return {MapValue(type_), value};
   }
 
  private:
   const LexType type_;
 };
 
+template <typename Range>
 class ModelReader {
  public:
-  explicit ModelReader(std::istream& code, ModelVisitor& visitor)
-      : lex_generator_{lexer::ParseLexems(code)}, visitor_{visitor} {
-    current_lex_it_ = lex_generator_.begin();
-  }
+  explicit ModelReader() = delete;
+  explicit ModelReader(Range& range, ModelVisitor& visitor)
+      : current_lex_it_{range.begin()}, visitor_{visitor} {}
 
   void VisitProgram() {
-    ValidatedCurrentLex(LexType::PROGRAM);
-    ValidatedMoveNextLex(LexType::OPENING_BRACE);
+    Validated(Current(), LexType::PROGRAM);
+    Validated(MoveNext(), LexType::OPENING_BRACE);
     visitor_.VisitProgram();
 
-    MoveNextLex();
+    MoveNext();
     VisitDeclarations();
     VisitOperators();
 
-    ValidatedCurrentLex(LexType::CLOSING_BRACE);
+    Validated(Current(), LexType::CLOSING_BRACE);
   }
 
   Constant GetConstant() {
-    const auto& constant = ValidatedCurrentLex(lexer::IsConstant);
+    const auto& constant = Validated(Current(), lexer::IsConstant);
     if (constant.type == LexType::FALSE || constant.type == LexType::TRUE) {
       return {VariableType::BOOL, constant.type == LexType::TRUE};
     }
 
-    const auto current_lex = CurrentLex();
-    MoveNextLex();
+    const auto current_lex = Current();
+    MoveNext();
 
     return std::visit(ConstantParser(current_lex.type), current_lex.data);
   }
 
   void VisitVariableDeclaration(VariableType variable_type) {
-    const auto& variable_name_lex = ValidatedCurrentLex(LexType::ID);
+    const auto& variable_name_lex = Validated(Current(), LexType::ID);
     auto variable_name = std::get<std::string>(variable_name_lex.data);
 
     std::optional<Constant> default_value;
-    if (MoveNextLex().type == LexType::ASSIGN) {
-      MoveNextLex();
+    if (MoveNext().type == LexType::ASSIGN) {
+      MoveNext();
       default_value.emplace(GetConstant());
     }
 
@@ -119,16 +165,16 @@ class ModelReader {
   }
 
   ParseResult VisitDescription() {
-    const auto lex_type = CurrentLex().type;
+    const auto lex_type = Current().type;
     if (!lexer::IsVariableType(lex_type)) [[unlikely]] {
         return ParseResult::FAILURE;
       }
-    const auto variable_type = MapLexType2Type(lex_type);
+    const auto variable_type = MapType(lex_type);
 
     do {
-      MoveNextLex();
+      MoveNext();
       VisitVariableDeclaration(variable_type);
-    } while (CurrentLex().type == LexType::COMMA);
+    } while (Current().type == LexType::COMMA);
 
     return ParseResult::SUCCESS;
   }
@@ -137,79 +183,79 @@ class ModelReader {
     visitor_.VisitDeclarations();
 
     while (VisitDescription() == ParseResult::SUCCESS) {
-      ValidatedCurrentLex(LexType::SEMICOLON);
-      MoveNextLex();
+      Validated(Current(), LexType::SEMICOLON);
+      MoveNext();
     }
   }
 
   ParseResult VisitRead() {
-    if (CurrentLex().type != LexType::READ) {
+    if (Current().type != LexType::READ) {
       return ParseResult::FAILURE;
     }
 
-    ValidatedMoveNextLex(LexType::OPENING_PARENTHESIS);
+    Validated(MoveNext(), LexType::OPENING_PARENTHESIS);
 
     auto variable_name =
-        std::get<std::string>(ValidatedMoveNextLex(LexType::ID).data);
+        std::get<std::string>(Validated(MoveNext(), LexType::ID).data);
     visitor_.VisitRead(std::move(variable_name));
 
-    ValidatedMoveNextLex(LexType::CLOSING_PARENTHESIS);
-    ValidatedMoveNextLex(LexType::SEMICOLON);
+    Validated(MoveNext(), LexType::CLOSING_PARENTHESIS);
+    Validated(MoveNext(), LexType::SEMICOLON);
 
-    MoveNextLex();
+    MoveNext();
     return ParseResult::SUCCESS;
   }
 
   ParseResult VisitWrite() {
-    if (CurrentLex().type != LexType::WRITE) {
+    if (Current().type != LexType::WRITE) {
       return ParseResult::FAILURE;
     }
 
-    ValidatedMoveNextLex(LexType::OPENING_PARENTHESIS);
+    Validated(MoveNext(), LexType::OPENING_PARENTHESIS);
     // TODO: list of expressions here please
     auto variable_name =
-        std::get<std::string>(ValidatedMoveNextLex(LexType::ID).data);
+        std::get<std::string>(Validated(MoveNext(), LexType::ID).data);
     visitor_.VisitWrite(std::move(variable_name));
 
-    ValidatedMoveNextLex(LexType::CLOSING_PARENTHESIS);
-    ValidatedMoveNextLex(LexType::SEMICOLON);
+    Validated(MoveNext(), LexType::CLOSING_PARENTHESIS);
+    Validated(MoveNext(), LexType::SEMICOLON);
 
-    MoveNextLex();
+    MoveNext();
     return ParseResult::SUCCESS;
   }
 
   ParseResult VisitCompoundOperator() {
-    if (CurrentLex().type != LexType::OPENING_BRACE) {
+    if (Current().type != LexType::OPENING_BRACE) {
       return ParseResult::FAILURE;
     }
 
-    MoveNextLex();
+    MoveNext();
     VisitOperators();
-    ValidatedCurrentLex(LexType::CLOSING_BRACE);
-    MoveNextLex();
+    Validated(Current(), LexType::CLOSING_BRACE);
+    MoveNext();
 
     return ParseResult::SUCCESS;
   }
 
   ParseResult VisitAtom() {
-    if (CurrentLex().type == LexType::OPENING_PARENTHESIS) {
-      MoveNextLex();
+    if (Current().type == LexType::OPENING_PARENTHESIS) {
+      MoveNext();
       if (VisitExpression() == ParseResult::FAILURE) {
         throw ParseExpressionError{"Expression parse error"};
       }
-      ValidatedCurrentLex(LexType::CLOSING_PARENTHESIS);
-      MoveNextLex();
+      Validated(Current(), LexType::CLOSING_PARENTHESIS);
+      MoveNext();
 
       return ParseResult::SUCCESS;
     }
 
-    if (CurrentLex().type == LexType::ID) {
-      std::string variable_name = std::get<std::string>(CurrentLex().data);
+    if (Current().type == LexType::ID) {
+      std::string variable_name = std::get<std::string>(Current().data);
       visitor_.VisitVariableInvokation(std::move(variable_name));
       return ParseResult::SUCCESS;
     }
 
-    if (lexer::IsConstant(CurrentLex().type)) {
+    if (lexer::IsConstant(Current().type)) {
       visitor_.VisitConstantInvokation(GetConstant());
       return ParseResult::SUCCESS;
     }
@@ -218,9 +264,9 @@ class ModelReader {
   }
 
   ParseResult VisitNot() {
-    while (CurrentLex().type == LexType::NOT) {
+    while (Current().type == LexType::NOT) {
       visitor_.VisitNot();
-      MoveNextLex();
+      MoveNext();
     }
 
     return VisitAtom();
@@ -231,14 +277,14 @@ class ModelReader {
       return ParseResult::FAILURE;
     }
 
-    while (CurrentLex().type == LexType::MUL ||
-           CurrentLex().type == LexType::DIV ||
-           CurrentLex().type == LexType::MOD) {
-      MoveNextLex();
+    while (Current().type == LexType::MUL || Current().type == LexType::DIV ||
+           Current().type == LexType::MOD) {
+      const auto mul_type = MapMul(Current().type);
+      MoveNext();
       if (VisitNot() == ParseResult::FAILURE) {
         throw ParseExpressionError{"Expression parse error"};
       }
-      visitor_.VisitMul();
+      visitor_.VisitMul(mul_type);
     }
 
     return ParseResult::SUCCESS;
@@ -249,13 +295,15 @@ class ModelReader {
       return ParseResult::FAILURE;
     }
 
-    while (CurrentLex().type == LexType::PLUS ||
-           CurrentLex().type == LexType::MINUS) {
-      MoveNextLex();
+    while (Current().type == LexType::PLUS ||
+           Current().type == LexType::MINUS) {
+      const auto add_type =
+          Current().type == LexType::PLUS ? AddType::PLUS : AddType::MINUS;
+      MoveNext();
       if (VisitMul() == ParseResult::FAILURE) {
         throw ParseExpressionError{"Expression parse error"};
       }
-      visitor_.VisitAdd();
+      visitor_.VisitAdd(add_type);
     }
 
     return ParseResult::SUCCESS;
@@ -266,12 +314,13 @@ class ModelReader {
       return ParseResult::FAILURE;
     }
 
-    while (lexer::IsCompare(CurrentLex().type)) {
-      MoveNextLex();
+    while (lexer::IsCompare(Current().type)) {
+      const auto compare_type = MapCompare(Current().type);
+      MoveNext();
       if (VisitAdd() == ParseResult::FAILURE) {
         throw ParseExpressionError{"Expression parse error"};
       }
-      visitor_.VisitCompare();
+      visitor_.VisitCompare(compare_type);
     }
 
     return ParseResult::SUCCESS;
@@ -282,8 +331,8 @@ class ModelReader {
       return ParseResult::FAILURE;
     }
 
-    while (CurrentLex().type == LexType::AND) {
-      MoveNextLex();
+    while (Current().type == LexType::AND) {
+      MoveNext();
       if (VisitCompare() == ParseResult::FAILURE) {
         throw ParseExpressionError{"Expression parse error"};
       }
@@ -298,8 +347,8 @@ class ModelReader {
       return ParseResult::FAILURE;
     }
 
-    while (CurrentLex().type == LexType::OR) {
-      MoveNextLex();
+    while (Current().type == LexType::OR) {
+      MoveNext();
       if (VisitAnd() == ParseResult::FAILURE) {
         throw ParseExpressionError{"Expression parse error"};
       }
@@ -314,8 +363,8 @@ class ModelReader {
       return ParseResult::FAILURE;
     }
 
-    if (CurrentLex().type == LexType::ASSIGN) {
-      MoveNextLex();
+    if (Current().type == LexType::ASSIGN) {
+      MoveNext();
       if (VisitOr() == ParseResult::FAILURE) {
         throw ParseExpressionError{"Expression parse error"};
       }
@@ -332,8 +381,8 @@ class ModelReader {
       return ParseResult::FAILURE;
     }
 
-    ValidatedCurrentLex(LexType::SEMICOLON);
-    MoveNextLex();
+    Validated(Current(), LexType::SEMICOLON);
+    MoveNext();
     return ParseResult::SUCCESS;
   }
 
@@ -358,38 +407,21 @@ class ModelReader {
   }
 
  private:
-  inline const lexer::Lexeme& CurrentLex() const { return *current_lex_it_; }
+  // TODO: add end() checks
+  inline const lexer::Lexeme& Current() const { return *current_lex_it_; }
 
-  inline const lexer::Lexeme& ValidatedCurrentLex(LexType required_type) const {
-    return Validated(*current_lex_it_, required_type);
-  }
+  inline const lexer::Lexeme& MoveNext() { return *(++current_lex_it_); }
 
-  template <typename TPredicate>
-  inline const lexer::Lexeme& ValidatedCurrentLex(
-      TPredicate&& predicate) const {
-    return Validated(*current_lex_it_, std::forward<TPredicate>(predicate));
-  }
-
-  inline const lexer::Lexeme& MoveNextLex() { return *(++current_lex_it_); }
-
-  inline const lexer::Lexeme& ValidatedMoveNextLex(LexType required_type) {
-    return Validated(*(++current_lex_it_), required_type);
-  }
-
-  template <typename TPredicate>
-  inline const lexer::Lexeme& ValidatedMoveNextLex(TPredicate&& predicate) {
-    return Validated(*(++current_lex_it_), std::forward<TPredicate>(predicate));
-  }
-
-  utils::generator<lexer::Lexeme> lex_generator_;
-  utils::generator<lexer::Lexeme>::iterator current_lex_it_;
+  typename Range::iterator current_lex_it_;
   ModelVisitor& visitor_;
 };
 
 }  // namespace
 
+// sorry about non-const references
 void VisitCode(std::istream& code, ModelVisitor& visitor) {
-  ModelReader{code, visitor}.VisitProgram();
+  auto lexems_generator = lexer::ParseLexems(code);
+  ModelReader(lexems_generator, visitor).VisitProgram();
 }
 
 }  // namespace interpreter::ast

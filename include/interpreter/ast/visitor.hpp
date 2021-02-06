@@ -22,6 +22,12 @@ struct Constant {
   VariableValue value;
 };
 
+enum class CompareType { LT, GT, LE, GE, EQ, NE };
+
+enum class AddType { PLUS, MINUS };
+
+enum class MulType { MUL, DIV, MOD };
+
 class ModelVisitor {
  public:
   virtual ~ModelVisitor() = default;
@@ -42,9 +48,9 @@ class ModelVisitor {
   virtual void VisitAssign() = 0;
   virtual void VisitOr() = 0;
   virtual void VisitAnd() = 0;
-  virtual void VisitCompare() = 0;
-  virtual void VisitAdd() = 0;
-  virtual void VisitMul() = 0;
+  virtual void VisitCompare(CompareType compare_type) = 0;
+  virtual void VisitAdd(AddType add_type) = 0;
+  virtual void VisitMul(MulType mul_type) = 0;
   virtual void VisitNot() = 0;
 
   virtual void VisitVariableInvokation(std::string&& variable_name) = 0;

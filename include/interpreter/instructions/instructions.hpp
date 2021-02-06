@@ -3,6 +3,7 @@
 #include <iosfwd>
 #include <memory>
 #include <optional>
+#include <stack>
 #include <unordered_map>
 #include <vector>
 
@@ -19,17 +20,24 @@ struct Variable {
   ast::VariableType type;
   ast::VariableValue value;
 
-  Variable& operator=(const Variable& other) = default;
-  Variable& operator=(Variable&& other) = default;
+  // Variable& operator=(const Variable& other) = default;
+  // Variable& operator=(Variable&& other) = default;
 
   [[nodiscard]] constexpr bool operator==(const Variable& other) const =
       default;
+};
+
+struct Literal {
+  ast::VariableType type;
+  ast::VariableValue value;
 };
 
 struct ExecutionContext {
   std::istream& input;
   std::ostream& output;
   std::unordered_map<std::string, Variable> variables;
+  // TODO: dont use Variable here
+  std::stack<Variable> values_stack;
 };
 
 class Instruction {
@@ -87,4 +95,37 @@ class Read : public Instruction {
   std::string variable_name_;
 };
 
+class Push : public Instruction {
+ public:
+  // TODO: dont use Variable
+  inline explicit Push(Variable value) noexcept : value_{std::move(value)} {}
+  void Execute(ExecutionContext& context) const override;
+
+ private:
+  Variable value_;
+};
+
+template <typename BinaryOpHandler>
+class BinaryOp : Instruction {
+  void Execute(ExecutionContext& context) const override;
+};
+
 }  // namespace interpreter::instructions
+
+template <typename BinaryOpHandler>
+void interpreter::instructions::BinaryOp<BinaryOpHandler>::Execute(
+    ExecutionContext& context) const {
+  auto& stack = context.values_stack;
+  if (stack.size() < 2) {
+    throw RuntimeError{"bruh"};
+  }
+
+  auto rhs = stack.top();
+  stack.pop();
+
+  auto lhs = stack.top();
+  stack.pop();
+
+  auto result = BinaryOpHandler{}(std::move(lhs), std::move(rhs));
+  stack.push(std::move(result));
+}

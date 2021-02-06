@@ -60,4 +60,8 @@ void Read::Execute(ExecutionContext& context) const {
              variable.value);
 }
 
+void Push::Execute(ExecutionContext& context) const {
+  context.values_stack.push(value_);
+}
+
 }  // namespace interpreter::instructions

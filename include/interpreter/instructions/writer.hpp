@@ -26,9 +26,9 @@ class InstructionsWriter : public ast::ModelVisitor {
   void VisitAssign() override;
   void VisitOr() override;
   void VisitAnd() override;
-  void VisitCompare() override;
-  void VisitAdd() override;
-  void VisitMul() override;
+  void VisitCompare(ast::CompareType compare_type) override;
+  void VisitAdd(ast::AddType add_type) override;
+  void VisitMul(ast::MulType mul_type) override;
   void VisitNot() override;
   void VisitVariableInvokation(std::string&& variable_name) override;
   void VisitConstantInvokation(ast::Constant&& constant) override;

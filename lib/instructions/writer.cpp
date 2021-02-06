@@ -33,9 +33,9 @@ void InstructionsWriter::VisitExpressionOperator() {}
 void InstructionsWriter::VisitAssign() {}
 void InstructionsWriter::VisitOr() {}
 void InstructionsWriter::VisitAnd() {}
-void InstructionsWriter::VisitCompare() {}
-void InstructionsWriter::VisitAdd() {}
-void InstructionsWriter::VisitMul() {}
+void InstructionsWriter::VisitCompare(ast::CompareType) {}
+void InstructionsWriter::VisitAdd(ast::AddType) {}
+void InstructionsWriter::VisitMul(ast::MulType) {}
 void InstructionsWriter::VisitNot() {}
 
 void InstructionsWriter::VisitVariableInvokation(std::string&& variable_name) {}
