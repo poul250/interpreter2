@@ -126,18 +126,6 @@ class ModelReader {
   explicit ModelReader(Range& range, ModelVisitor& visitor)
       : current_lex_it_{range.begin()}, visitor_{visitor} {}
 
-  void VisitProgram() {
-    Validated(Current(), LexType::PROGRAM);
-    Validated(MoveNext(), LexType::OPENING_BRACE);
-    visitor_.VisitProgram();
-
-    MoveNext();
-    VisitDeclarations();
-    VisitOperators();
-
-    Validated(Current(), LexType::CLOSING_BRACE);
-  }
-
   Constant GetConstant() {
     const auto& constant = Validated(Current(), lexer::IsConstant);
     if (constant.type == LexType::FALSE || constant.type == LexType::TRUE) {
@@ -228,7 +216,6 @@ class ModelReader {
     if (Current().type != LexType::OPENING_BRACE) {
       return ParseResult::FAILURE;
     }
-
     MoveNext();
     VisitOperators();
     Validated(Current(), LexType::CLOSING_BRACE);
@@ -260,7 +247,7 @@ class ModelReader {
       return ParseResult::SUCCESS;
     }
 
-    return ParseResult::SUCCESS;
+    return ParseResult::FAILURE;
   }
 
   ParseResult VisitNot() {
@@ -404,6 +391,18 @@ class ModelReader {
     while (VisitOperator() == ParseResult::SUCCESS) {
       // Just visit while it lets us visit
     }
+  }
+
+  void VisitProgram() {
+    Validated(Current(), LexType::PROGRAM);
+    Validated(MoveNext(), LexType::OPENING_BRACE);
+    visitor_.VisitProgram();
+
+    MoveNext();
+    VisitDeclarations();
+    VisitOperators();
+
+    Validated(Current(), LexType::CLOSING_BRACE);
   }
 
  private:

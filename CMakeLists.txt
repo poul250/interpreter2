@@ -34,5 +34,7 @@ endif()
 
 # build tests if needed
 if (${PROJECT_NAME}_ENABLE_UNIT_TESTING)
+  add_subdirectory(thirdparty/googletest)
+  enable_testing()
   add_subdirectory(tests)
 endif()
