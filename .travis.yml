@@ -1,0 +1,22 @@
+language: cpp
+
+dist: bionic
+
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+      env: CXX=g++-10
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-10
+            - cmake
+script:
+  - mkdir build
+  - cd build
+  - cmake ..
+  - cmake --build .
+  - ./tests/interpreter2_TEST

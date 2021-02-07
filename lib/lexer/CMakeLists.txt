@@ -1,5 +1,5 @@
 target_sources(
   ${PROJECT_NAME}_LIB PRIVATE
-  lexer.cpp
-  print_lexems.cpp  
+  ${CMAKE_CURRENT_SOURCE_DIR}/lexer.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/print_lexems.cpp
 )
