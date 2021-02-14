@@ -52,6 +52,15 @@ TEST(TestLexer, TestSpaces) {
        {LexType::NONE}});
 }
 
+TEST(TestLexer, EscapeSymbols) {
+  MakeTestLexer(R"(  "a\b" "a\n" "a\t" "a\"" )",  //
+                {{LexType::VALUE_STR, "ab"},
+                 {LexType::VALUE_STR, "a\n"},
+                 {LexType::VALUE_STR, "a\t"},
+                 {LexType::VALUE_STR, "a\""},
+                 {LexType::NONE}});
+}
+
 TEST(TestLexer, TestDeclarations) {
   MakeTestLexer(
       R"(

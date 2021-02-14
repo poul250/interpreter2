@@ -7,8 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-// TODO: don't include ast/types here, make new models
-#include "interpreter/ast/types.hpp"
+#include "operations.hpp"
 
 namespace interpreter::instructions {
 
@@ -16,28 +15,11 @@ struct RuntimeError : public std::runtime_error {
   using runtime_error::runtime_error;
 };
 
-struct Variable {
-  ast::VariableType type;
-  ast::VariableValue value;
-
-  // Variable& operator=(const Variable& other) = default;
-  // Variable& operator=(Variable&& other) = default;
-
-  [[nodiscard]] constexpr bool operator==(const Variable& other) const =
-      default;
-};
-
-struct Literal {
-  ast::VariableType type;
-  ast::VariableValue value;
-};
-
 struct ExecutionContext {
   std::istream& input;
   std::ostream& output;
-  std::unordered_map<std::string, Variable> variables;
-  // TODO: dont use Variable here
-  std::stack<Variable> values_stack;
+  std::unordered_map<std::string, Value> variables;
+  std::stack<OperationValue> values_stack;
 };
 
 class Instruction {
@@ -49,7 +31,7 @@ class Instruction {
 class InstructionsBlock : public Instruction {
  public:
   // TODO: should it be shared_ptr?
-  inline explicit InstructionsBlock(
+  inline InstructionsBlock(
       std::vector<std::unique_ptr<Instruction>> instructions)
       : instructions_{std::move(instructions)} {}
   void Execute(ExecutionContext& context) const override;
@@ -60,34 +42,23 @@ class InstructionsBlock : public Instruction {
 
 class VariableDefinition : public Instruction {
  public:
-  inline explicit VariableDefinition(
-      ast::VariableType type, std::string name,
-      std::optional<ast::VariableValue> initial_value) noexcept
-      : type_{type},
-        name_{std::move(name)},
-        initial_value_{std::move(initial_value)} {}
+  inline VariableDefinition(std::string name, Value initial_value) noexcept
+      : name_{std::move(name)}, initial_value_{std::move(initial_value)} {}
   void Execute(ExecutionContext& context) const override;
 
  private:
-  ast::VariableType type_;
   std::string name_;
-  std::optional<ast::VariableValue> initial_value_;
+  Value initial_value_;
 };
 
 class Write : public Instruction {
  public:
-  inline explicit Write(std::string variable_name) noexcept
-      : variable_name_{std::move(variable_name)} {}
   void Execute(ExecutionContext& context) const override;
-
- private:
-  // TODO: use expression here
-  std::string variable_name_;
 };
 
 class Read : public Instruction {
  public:
-  inline explicit Read(std::string variable_name) noexcept
+  inline Read(std::string variable_name) noexcept
       : variable_name_{std::move(variable_name)} {}
   void Execute(ExecutionContext& context) const override;
 
@@ -95,18 +66,39 @@ class Read : public Instruction {
   std::string variable_name_;
 };
 
-class Push : public Instruction {
+class Pop : public Instruction {
+ public:
+  void Execute(ExecutionContext& context) const override;
+};
+
+class InvokeConstant : public Instruction {
  public:
   // TODO: dont use Variable
-  inline explicit Push(Variable value) noexcept : value_{std::move(value)} {}
+  inline InvokeConstant(Value value) noexcept : value_{std::move(value)} {}
   void Execute(ExecutionContext& context) const override;
 
  private:
-  Variable value_;
+  Value value_;
+};
+
+class InvokeVariable : public Instruction {
+ public:
+  inline InvokeVariable(std::string name) noexcept : name_{std::move(name)} {}
+  void Execute(ExecutionContext& context) const override;
+
+ private:
+  std::string name_;
 };
 
 template <typename BinaryOpHandler>
-class BinaryOp : Instruction {
+class BinaryOp : public Instruction {
+ public:
+  void Execute(ExecutionContext& context) const override;
+};
+
+template <typename UnaryOpHandler>
+class UnaryOp : public Instruction {
+ public:
   void Execute(ExecutionContext& context) const override;
 };
 
@@ -117,6 +109,7 @@ void interpreter::instructions::BinaryOp<BinaryOpHandler>::Execute(
     ExecutionContext& context) const {
   auto& stack = context.values_stack;
   if (stack.size() < 2) {
+    // TODO: something smarter pls
     throw RuntimeError{"bruh"};
   }
 
@@ -126,6 +119,20 @@ void interpreter::instructions::BinaryOp<BinaryOpHandler>::Execute(
   auto lhs = stack.top();
   stack.pop();
 
-  auto result = BinaryOpHandler{}(std::move(lhs), std::move(rhs));
-  stack.push(std::move(result));
+  stack.push(PerformOperation<BinaryOpHandler>(std::move(lhs), std::move(rhs)));
+}
+
+template <typename UnaryOpHandler>
+void interpreter::instructions::UnaryOp<UnaryOpHandler>::Execute(
+    ExecutionContext& context) const {
+  auto stack = context.values_stack;
+  if (stack.size() < 1) {
+    // TODO: something smarter pls
+    throw RuntimeError{"bruh"};
+  }
+
+  auto value = stack.top();
+  stack.pop();
+
+  stack.push(UnaryOpHandler{}(std::move(value)));
 }

@@ -60,6 +60,9 @@ const std::unordered_map<char, LexType> SINGLE_CHAR = {
     {')', LexType::CLOSING_PARENTHESIS},
 };
 
+const std::unordered_map<char, char> ESCAPE_CHARACTERS = {
+    {'n', '\n'}, {'t', '\t'}, {'r', '\r'}, {'"', '\"'}, {'\\', '\\'}};
+
 [[nodiscard]] constexpr bool IsLiteral(char ch) noexcept {
   return isdigit(ch) || isalpha(ch) || ch == '_';
 }
@@ -100,6 +103,7 @@ class Lexer {
   StateResult ManyLineCommentStar(char ch);
   StateResult ManyLineCommentSlash(char ch);
   StateResult ReadString(char ch);
+  StateResult ReadEscapeCharacter(char ch);
 
   int line_;
   char prev_ch_ = 0;
@@ -246,11 +250,26 @@ Lexer::StateResult Lexer::ReadString(char ch) {
   if (eof_) throw LexicalError{"Unexpected end of file"};
   if (ch == '\n') throw LexicalError("Unexpected end of line");
 
+  if (ch == '\\') {
+    return {&Lexer::ReadEscapeCharacter};
+  }
   if (ch == '"') {
     return {&Lexer::Idle, false, Lexeme{LexType::VALUE_STR, std::move(buf_)}};
   }
 
   buf_ += ch;
+  return {&Lexer::ReadString};
+}
+
+Lexer::StateResult Lexer::ReadEscapeCharacter(char ch) {
+  if (eof_) throw LexicalError{"Unexpected end of file"};
+
+  if (auto it = ESCAPE_CHARACTERS.find(ch); it != ESCAPE_CHARACTERS.cend()) {
+    buf_ += it->second;
+  } else {
+    buf_ += ch;
+  }
+
   return {&Lexer::ReadString};
 }
 

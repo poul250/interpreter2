@@ -40,8 +40,7 @@ class ModelVisitor {
   virtual void VisitOperators() = 0;
 
   virtual void VisitRead(std::string&& name) = 0;
-  // TODO: replace variable_name with Expression
-  virtual void VisitWrite(std::string&& variable_name) = 0;
+  virtual void VisitWrite() = 0;
   virtual void VisitExpressionOperator() = 0;
 
   // Expression states

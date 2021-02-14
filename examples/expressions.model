@@ -1,0 +1,9 @@
+program {
+    int x, y;
+    read(x);
+    read(y);
+    write(x + y, "123", "456" + "00", "\n");
+
+    x = 20;
+    write(x, x = 10);
+}

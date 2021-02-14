@@ -2,7 +2,7 @@ program {
     int x = 1;
     int y;
 
-    write(x);
+    write(x, "\n");
     read(y);
-    write(y);
+    write(y, " ", 10);
 }

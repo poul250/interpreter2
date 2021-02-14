@@ -18,8 +18,7 @@ class InstructionsWriter : public ast::ModelVisitor {
       std::optional<ast::Constant>&& initial_value = std::nullopt) override;
   void VisitOperators() override;
   void VisitRead(std::string&& name) override;
-  // TODO: replace Variable with Expression
-  void VisitWrite(std::string&& variable_name) override;
+  void VisitWrite() override;
   void VisitExpressionOperator() override;
 
   // Expression States

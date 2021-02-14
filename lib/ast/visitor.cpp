@@ -12,10 +12,10 @@ namespace {
 
 using LexType = lexer::LexType;
 
-enum class ParseResult { SUCCESS, FAILURE };
+enum class ParseResult : bool { FAILURE = false, SUCCESS = true };
 
 // TODO: Is that ok?
-[[nodiscard]] VariableType MapType(LexType type) {
+[[nodiscard]] inline VariableType MapType(LexType type) {
   switch (type) {
     case LexType::TYPE_INT:
       return VariableType::INT;
@@ -30,7 +30,7 @@ enum class ParseResult { SUCCESS, FAILURE };
   throw SyntaxError{"Unexpected lexeme"};
 }
 
-[[nodiscard]] VariableType MapValue(LexType type) {
+[[nodiscard]] inline VariableType MapValue(LexType type) {
   switch (type) {
     case LexType::VALUE_INT:
       return VariableType::INT;
@@ -47,7 +47,7 @@ enum class ParseResult { SUCCESS, FAILURE };
   throw SyntaxError{"Unexpected lexeme"};
 }
 
-[[nodiscard]] CompareType MapCompare(LexType type) {
+[[nodiscard]] inline CompareType MapCompare(LexType type) {
   switch (type) {
     case LexType::LT:
       return CompareType::LT;
@@ -66,7 +66,7 @@ enum class ParseResult { SUCCESS, FAILURE };
   throw SyntaxError{"Unexpected lexeme"};
 }
 
-[[nodiscard]] MulType MapMul(LexType type) {
+[[nodiscard]] inline MulType MapMul(LexType type) {
   switch (type) {
     case LexType::MUL:
       return MulType::MUL;
@@ -91,7 +91,7 @@ inline const lexer::Lexeme& Validated(const lexer::Lexeme& lexeme,
 template <typename TPredicate>
 inline const lexer::Lexeme& Validated(const lexer::Lexeme& lexeme,
                                       TPredicate&& predicate) {
-  if (!predicate(lexeme.type)) [[unlikely]] {
+  if (!std::forward<TPredicate>(predicate)(lexeme.type)) [[unlikely]] {
       throw SyntaxError{"Unexpected Lexeme"};
     }
   return lexeme;
@@ -138,92 +138,6 @@ class ModelReader {
     return std::visit(ConstantParser(current_lex.type), current_lex.data);
   }
 
-  void VisitVariableDeclaration(VariableType variable_type) {
-    const auto& variable_name_lex = Validated(Current(), LexType::ID);
-    auto variable_name = std::get<std::string>(variable_name_lex.data);
-
-    std::optional<Constant> default_value;
-    if (MoveNext().type == LexType::ASSIGN) {
-      MoveNext();
-      default_value.emplace(GetConstant());
-    }
-
-    visitor_.VisitVariableDeclaration(variable_type, std::move(variable_name),
-                                      std::move(default_value));
-  }
-
-  ParseResult VisitDescription() {
-    const auto lex_type = Current().type;
-    if (!lexer::IsVariableType(lex_type)) [[unlikely]] {
-        return ParseResult::FAILURE;
-      }
-    const auto variable_type = MapType(lex_type);
-
-    do {
-      MoveNext();
-      VisitVariableDeclaration(variable_type);
-    } while (Current().type == LexType::COMMA);
-
-    return ParseResult::SUCCESS;
-  }
-
-  void VisitDeclarations() {
-    visitor_.VisitDeclarations();
-
-    while (VisitDescription() == ParseResult::SUCCESS) {
-      Validated(Current(), LexType::SEMICOLON);
-      MoveNext();
-    }
-  }
-
-  ParseResult VisitRead() {
-    if (Current().type != LexType::READ) {
-      return ParseResult::FAILURE;
-    }
-
-    Validated(MoveNext(), LexType::OPENING_PARENTHESIS);
-
-    auto variable_name =
-        std::get<std::string>(Validated(MoveNext(), LexType::ID).data);
-    visitor_.VisitRead(std::move(variable_name));
-
-    Validated(MoveNext(), LexType::CLOSING_PARENTHESIS);
-    Validated(MoveNext(), LexType::SEMICOLON);
-
-    MoveNext();
-    return ParseResult::SUCCESS;
-  }
-
-  ParseResult VisitWrite() {
-    if (Current().type != LexType::WRITE) {
-      return ParseResult::FAILURE;
-    }
-
-    Validated(MoveNext(), LexType::OPENING_PARENTHESIS);
-    // TODO: list of expressions here please
-    auto variable_name =
-        std::get<std::string>(Validated(MoveNext(), LexType::ID).data);
-    visitor_.VisitWrite(std::move(variable_name));
-
-    Validated(MoveNext(), LexType::CLOSING_PARENTHESIS);
-    Validated(MoveNext(), LexType::SEMICOLON);
-
-    MoveNext();
-    return ParseResult::SUCCESS;
-  }
-
-  ParseResult VisitCompoundOperator() {
-    if (Current().type != LexType::OPENING_BRACE) {
-      return ParseResult::FAILURE;
-    }
-    MoveNext();
-    VisitOperators();
-    Validated(Current(), LexType::CLOSING_BRACE);
-    MoveNext();
-
-    return ParseResult::SUCCESS;
-  }
-
   ParseResult VisitAtom() {
     if (Current().type == LexType::OPENING_PARENTHESIS) {
       MoveNext();
@@ -239,6 +153,7 @@ class ModelReader {
     if (Current().type == LexType::ID) {
       std::string variable_name = std::get<std::string>(Current().data);
       visitor_.VisitVariableInvokation(std::move(variable_name));
+      MoveNext();
       return ParseResult::SUCCESS;
     }
 
@@ -286,6 +201,7 @@ class ModelReader {
            Current().type == LexType::MINUS) {
       const auto add_type =
           Current().type == LexType::PLUS ? AddType::PLUS : AddType::MINUS;
+
       MoveNext();
       if (VisitMul() == ParseResult::FAILURE) {
         throw ParseExpressionError{"Expression parse error"};
@@ -367,8 +283,61 @@ class ModelReader {
     if (VisitExpression() == ParseResult::FAILURE) {
       return ParseResult::FAILURE;
     }
-
     Validated(Current(), LexType::SEMICOLON);
+
+    visitor_.VisitExpressionOperator();
+
+    MoveNext();
+    return ParseResult::SUCCESS;
+  }
+
+  ParseResult VisitCompoundOperator() {
+    if (Current().type != LexType::OPENING_BRACE) {
+      return ParseResult::FAILURE;
+    }
+    MoveNext();
+    VisitOperators();
+    Validated(Current(), LexType::CLOSING_BRACE);
+    MoveNext();
+
+    return ParseResult::SUCCESS;
+  }
+
+  ParseResult VisitWrite() {
+    if (Current().type != LexType::WRITE) {
+      return ParseResult::FAILURE;
+    }
+
+    Validated(MoveNext(), LexType::OPENING_PARENTHESIS);
+
+    do {
+      MoveNext();
+      if (VisitExpression() == ParseResult::FAILURE) {
+        throw ParseExpressionError{"Expression parse error"};
+      }
+      visitor_.VisitWrite();
+    } while (Current().type == LexType::COMMA);
+
+    Validated(Current(), LexType::CLOSING_PARENTHESIS);
+    Validated(MoveNext(), LexType::SEMICOLON);
+    MoveNext();
+    return ParseResult::SUCCESS;
+  }
+
+  ParseResult VisitRead() {
+    if (Current().type != LexType::READ) {
+      return ParseResult::FAILURE;
+    }
+
+    Validated(MoveNext(), LexType::OPENING_PARENTHESIS);
+
+    auto variable_name =
+        std::get<std::string>(Validated(MoveNext(), LexType::ID).data);
+    visitor_.VisitRead(std::move(variable_name));
+
+    Validated(MoveNext(), LexType::CLOSING_PARENTHESIS);
+    Validated(MoveNext(), LexType::SEMICOLON);
+
     MoveNext();
     return ParseResult::SUCCESS;
   }
@@ -378,7 +347,7 @@ class ModelReader {
     if (VisitRead() == ParseResult::SUCCESS ||
         VisitWrite() == ParseResult::SUCCESS ||
         VisitCompoundOperator() == ParseResult::SUCCESS ||
-        VisitExpression() == ParseResult::SUCCESS) {
+        VisitExpressionOperator() == ParseResult::SUCCESS) {
       return ParseResult::SUCCESS;
     }
 
@@ -390,6 +359,44 @@ class ModelReader {
 
     while (VisitOperator() == ParseResult::SUCCESS) {
       // Just visit while it lets us visit
+    }
+  }
+
+  void VisitVariableDeclaration(VariableType variable_type) {
+    const auto& variable_name_lex = Validated(Current(), LexType::ID);
+    auto variable_name = std::get<std::string>(variable_name_lex.data);
+
+    std::optional<Constant> default_value;
+    if (MoveNext().type == LexType::ASSIGN) {
+      MoveNext();
+      default_value.emplace(GetConstant());
+    }
+
+    visitor_.VisitVariableDeclaration(variable_type, std::move(variable_name),
+                                      std::move(default_value));
+  }
+
+  ParseResult VisitDeclaration() {
+    const auto lex_type = Current().type;
+    if (!lexer::IsVariableType(lex_type)) [[unlikely]] {
+        return ParseResult::FAILURE;
+      }
+    const auto variable_type = MapType(lex_type);
+
+    do {
+      MoveNext();
+      VisitVariableDeclaration(variable_type);
+    } while (Current().type == LexType::COMMA);
+
+    return ParseResult::SUCCESS;
+  }
+
+  void VisitDeclarations() {
+    visitor_.VisitDeclarations();
+
+    while (VisitDeclaration() == ParseResult::SUCCESS) {
+      Validated(Current(), LexType::SEMICOLON);
+      MoveNext();
     }
   }
 
