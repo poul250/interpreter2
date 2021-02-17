@@ -127,15 +127,14 @@ class ModelReader {
       : current_lex_it_{range.begin()}, visitor_{visitor} {}
 
   Constant GetConstant() {
-    const auto& constant = Validated(Current(), lexer::IsConstant);
+    const auto constant = Validated(Current(), lexer::IsConstant);
+    MoveNext();
+  
     if (constant.type == LexType::FALSE || constant.type == LexType::TRUE) {
       return {VariableType::BOOL, constant.type == LexType::TRUE};
     }
 
-    const auto current_lex = Current();
-    MoveNext();
-
-    return std::visit(ConstantParser(current_lex.type), current_lex.data);
+    return std::visit(ConstantParser(constant.type), constant.data);
   }
 
   ParseResult VisitAtom() {
@@ -342,6 +341,26 @@ class ModelReader {
     return ParseResult::SUCCESS;
   }
 
+  ParseResult VisitContinue() {
+    if (Current().type != LexType::CONTINUE) {
+      return ParseResult::FAILURE;
+    }
+    Validated(MoveNext(), LexType::SEMICOLON);
+    visitor_.VisitContinue();
+    MoveNext();
+    return ParseResult::SUCCESS;
+  }
+
+  ParseResult VisitBreak() {
+    if (Current().type != LexType::BREAK) {
+      return ParseResult::FAILURE;
+    }
+    Validated(MoveNext(), LexType::SEMICOLON);
+    visitor_.VisitBreak();
+    MoveNext();
+    return ParseResult::SUCCESS;
+  }
+
   ParseResult VisitWhile() {
     if (Current().type != LexType::WHILE) {
       return ParseResult::FAILURE;
@@ -399,6 +418,8 @@ class ModelReader {
     // using lazy evaluation here
     if (VisitIf() == ParseResult::SUCCESS ||
         VisitWhile() == ParseResult::SUCCESS ||
+        VisitBreak() == ParseResult::SUCCESS ||
+        VisitContinue() == ParseResult::SUCCESS ||
         VisitRead() == ParseResult::SUCCESS ||
         VisitWrite() == ParseResult::SUCCESS ||
         VisitCompoundOperator() == ParseResult::SUCCESS ||

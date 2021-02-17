@@ -54,6 +54,8 @@ class ModelVisitor {
   virtual void VisitWhile() = 0;
   virtual void VisitWhileBody() = 0;
   virtual void VisitEndWhile() = 0;
+  virtual void VisitBreak() = 0;
+  virtual void VisitContinue() = 0;
 
   // Expression states
   virtual void VisitAssign() = 0;

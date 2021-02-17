@@ -26,6 +26,8 @@ class MockModelVisitor : public ModelVisitor {
   MOCK_METHOD(void, VisitWhile, (), (override));
   MOCK_METHOD(void, VisitWhileBody, (), (override));
   MOCK_METHOD(void, VisitEndWhile, (), (override));
+  MOCK_METHOD(void, VisitBreak, (), (override));
+  MOCK_METHOD(void, VisitContinue, (), (override));
 
   MOCK_METHOD(void, VisitAssign, (), (override));
   MOCK_METHOD(void, VisitOr, (), (override));

@@ -64,7 +64,7 @@ const std::unordered_map<char, char> ESCAPE_CHARACTERS = {
     {'n', '\n'}, {'t', '\t'}, {'r', '\r'}, {'"', '\"'}, {'\\', '\\'}};
 
 [[nodiscard]] constexpr bool IsLiteral(char ch) noexcept {
-  return isdigit(ch) || isalpha(ch) || ch == '_';
+  return isalpha(ch) || ch == '_';
 }
 
 template <typename Key, typename Value>
@@ -200,7 +200,7 @@ Lexer::StateResult Lexer::ComplexOp(char ch) {
 }
 
 Lexer::StateResult Lexer::ReadWord(char ch) {
-  if (eof_ || !isalpha(ch)) {
+  if (eof_ || !IsLiteral(ch)) {
     auto it = STRING_TO_TYPE.find(buf_);
     if (it != STRING_TO_TYPE.end()) {
       return {&Lexer::Idle, !eof_, Lexeme{it->second}};

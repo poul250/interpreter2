@@ -35,11 +35,13 @@ struct Or : Op {};
 struct And : Op {};
 struct Mul : Op {};
 // struct Div : Op{};
-// struct Mod : Op{};
+struct Mod : Op{};
+struct Equals : Op{};
 struct Less : Op {};
 struct Greater : Op {};
-// struct Equal : Op{};
-// struct NotEqual : Op{};
+struct LessOrEq : Op {};
+struct GreaterOrEq : Op {};
+// struct NotEquals : Op{};
 }  // namespace op_type
 
 namespace details {
@@ -47,6 +49,14 @@ namespace details {
 namespace operations {
 
 struct NotAllowed {};
+
+#define ADD_DEFAULT_ASSIGN_OPERATION(name, op)                           \
+  template <typename L, typename R>                               \
+  struct name {                                                   \
+    constexpr auto operator()(L& lhs, const R& rhs) const { \
+      return lhs op rhs;                                          \
+    }                                                             \
+  }
 
 #define ADD_DEFAULT_OPERATION(name, op)                           \
   template <typename L, typename R>                               \
@@ -56,19 +66,21 @@ struct NotAllowed {};
     }                                                             \
   }
 
-template <typename L, typename R>
-struct Assign {
-  constexpr auto operator()(L& lhs, const R& rhs) const { return lhs = rhs; }
-};
+ADD_DEFAULT_ASSIGN_OPERATION(Assign, =);
 
 ADD_DEFAULT_OPERATION(Plus, +);
 ADD_DEFAULT_OPERATION(Minus, -);
 ADD_DEFAULT_OPERATION(Mul, *);
+ADD_DEFAULT_OPERATION(Mod, %);
+ADD_DEFAULT_OPERATION(Equals, ==);
 ADD_DEFAULT_OPERATION(Less, <);
 ADD_DEFAULT_OPERATION(Greater, >);
+ADD_DEFAULT_OPERATION(LessOrEq, <=);
+ADD_DEFAULT_OPERATION(GreaterOrEq, >=);
 ADD_DEFAULT_OPERATION(Or, ||);
 ADD_DEFAULT_OPERATION(And, &&);
 
+#undef ADD_DEFAULT_ASSIGN_OPERATION
 #undef ADD_DEFAULT_OPERATION
 
 }  // namespace operations
@@ -93,33 +105,52 @@ struct Rule : details::operations::NotAllowed {};
 ADD_DEFAULT_RULE(Int, Plus, Int);
 ADD_DEFAULT_RULE(Int, Minus, Int);
 ADD_DEFAULT_RULE(Int, Mul, Int);
+ADD_DEFAULT_RULE(Int, Mod, Int);
 
 ADD_DEFAULT_RULE(Real, Plus, Real);
 ADD_DEFAULT_RULE(Real, Minus, Real);
+ADD_DEFAULT_RULE(Real, Mul, Real);
 
 ADD_DEFAULT_RULE(Real, Plus, Int);
 ADD_DEFAULT_RULE(Real, Minus, Int);
+ADD_DEFAULT_RULE(Real, Mul, Int);
 
 ADD_DEFAULT_RULE(Int, Plus, Real);
 ADD_DEFAULT_RULE(Int, Minus, Real);
+ADD_DEFAULT_RULE(Int, Mul, Real);
 
 ADD_DEFAULT_RULE(Str, Plus, Str);
 
 // compare rules
+ADD_DEFAULT_RULE(Int, Equals, Int);
 ADD_DEFAULT_RULE(Int, Less, Int);
 ADD_DEFAULT_RULE(Int, Greater, Int);
+ADD_DEFAULT_RULE(Int, LessOrEq, Int);
+ADD_DEFAULT_RULE(Int, GreaterOrEq, Int);
 
+ADD_DEFAULT_RULE(Real, Equals, Real);
 ADD_DEFAULT_RULE(Real, Less, Real);
 ADD_DEFAULT_RULE(Real, Greater, Real);
+ADD_DEFAULT_RULE(Real, LessOrEq, Real);
+ADD_DEFAULT_RULE(Real, GreaterOrEq, Real);
 
+ADD_DEFAULT_RULE(Real, Equals, Int);
 ADD_DEFAULT_RULE(Real, Less, Int);
 ADD_DEFAULT_RULE(Real, Greater, Int);
+ADD_DEFAULT_RULE(Real, LessOrEq, Int);
+ADD_DEFAULT_RULE(Real, GreaterOrEq, Int);
 
+ADD_DEFAULT_RULE(Int, Equals, Real);
 ADD_DEFAULT_RULE(Int, Less, Real);
 ADD_DEFAULT_RULE(Int, Greater, Real);
+ADD_DEFAULT_RULE(Int, LessOrEq, Real);
+ADD_DEFAULT_RULE(Int, GreaterOrEq, Real);
 
+ADD_DEFAULT_RULE(Str, Equals, Str);
 ADD_DEFAULT_RULE(Str, Less, Str);
 ADD_DEFAULT_RULE(Str, Greater, Str);
+ADD_DEFAULT_RULE(Str, LessOrEq, Str);
+ADD_DEFAULT_RULE(Str, GreaterOrEq, Str);
 
 // assign rules
 ADD_DEFAULT_RULE(Int&, Assign, Int);

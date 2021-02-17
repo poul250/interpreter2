@@ -1,0 +1,8 @@
+program {
+    int i = 0, n;
+    read(n);
+
+    while (i < n) {
+        i = i + 1;
+    }
+}

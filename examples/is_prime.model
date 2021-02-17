@@ -1,0 +1,20 @@
+program {
+    int i, n;
+    boolean is_prime = true;
+    read(n);
+
+    i = 2;
+    while (i < n) {
+        if (n % i == 0) {
+            is_prime = false;
+            break;
+        }
+        i = i + 1;
+    }
+
+    if (is_prime) {
+        write("Is prime");
+    } else {
+        write("Is not prime");
+    }
+}
