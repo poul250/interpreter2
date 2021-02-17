@@ -33,7 +33,7 @@ struct Plus : Op {};
 struct Minus : Op {};
 struct Or : Op {};
 struct And : Op {};
-// struct Mul : Op{};
+struct Mul : Op {};
 // struct Div : Op{};
 // struct Mod : Op{};
 struct Less : Op {};
@@ -48,52 +48,28 @@ namespace operations {
 
 struct NotAllowed {};
 
+#define ADD_DEFAULT_OPERATION(name, op)                           \
+  template <typename L, typename R>                               \
+  struct name {                                                   \
+    constexpr auto operator()(const L& lhs, const R& rhs) const { \
+      return lhs op rhs;                                          \
+    }                                                             \
+  }
+
 template <typename L, typename R>
 struct Assign {
   constexpr auto operator()(L& lhs, const R& rhs) const { return lhs = rhs; }
 };
 
-template <typename L, typename R>
-struct Plus {
-  constexpr auto operator()(const L& lhs, const R& rhs) const {
-    return lhs + rhs;
-  }
-};
+ADD_DEFAULT_OPERATION(Plus, +);
+ADD_DEFAULT_OPERATION(Minus, -);
+ADD_DEFAULT_OPERATION(Mul, *);
+ADD_DEFAULT_OPERATION(Less, <);
+ADD_DEFAULT_OPERATION(Greater, >);
+ADD_DEFAULT_OPERATION(Or, ||);
+ADD_DEFAULT_OPERATION(And, &&);
 
-template <typename L, typename R>
-struct Minus {
-  constexpr auto operator()(const L& lhs, const R& rhs) const {
-    return lhs - rhs;
-  }
-};
-
-template <typename L, typename R>
-struct Less {
-  constexpr auto operator()(const L& lhs, const R& rhs) const {
-    return lhs < rhs;
-  }
-};
-
-template <typename L, typename R>
-struct Greater {
-  constexpr auto operator()(const L& lhs, const R& rhs) const {
-    return lhs > rhs;
-  }
-};
-
-template <typename L, typename R>
-struct Or {
-  constexpr auto operator()(const L& lhs, const R& rhs) const {
-    return lhs || rhs;
-  }
-};
-
-template <typename L, typename R>
-struct And {
-  constexpr auto operator()(const L& lhs, const R& rhs) const {
-    return lhs && rhs;
-  }
-};
+#undef ADD_DEFAULT_OPERATION
 
 }  // namespace operations
 
@@ -116,6 +92,7 @@ struct Rule : details::operations::NotAllowed {};
 // arithmetical rules
 ADD_DEFAULT_RULE(Int, Plus, Int);
 ADD_DEFAULT_RULE(Int, Minus, Int);
+ADD_DEFAULT_RULE(Int, Mul, Int);
 
 ADD_DEFAULT_RULE(Real, Plus, Real);
 ADD_DEFAULT_RULE(Real, Minus, Real);

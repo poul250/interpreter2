@@ -342,6 +342,29 @@ class ModelReader {
     return ParseResult::SUCCESS;
   }
 
+  ParseResult VisitWhile() {
+    if (Current().type != LexType::WHILE) {
+      return ParseResult::FAILURE;
+    }
+    visitor_.VisitWhile();
+
+    Validated(MoveNext(), LexType::OPENING_PARENTHESIS);
+    MoveNext();
+    if (VisitExpression() == ParseResult::FAILURE) {
+      throw ParseOperatorError{"Failed to parse while expression"};
+    }
+    Validated(Current(), LexType::CLOSING_PARENTHESIS);
+
+    visitor_.VisitWhileBody();
+    MoveNext();
+    if (VisitOperator() == ParseResult::FAILURE) {
+      throw ParseOperatorError{"Failed to parse while body"};
+    }
+    visitor_.VisitEndWhile();
+
+    return ParseResult::SUCCESS;
+  }
+
   ParseResult VisitIf() {
     if (Current().type != LexType::IF) {
       return ParseResult::FAILURE;
@@ -375,6 +398,7 @@ class ModelReader {
   ParseResult VisitOperator() {
     // using lazy evaluation here
     if (VisitIf() == ParseResult::SUCCESS ||
+        VisitWhile() == ParseResult::SUCCESS ||
         VisitRead() == ParseResult::SUCCESS ||
         VisitWrite() == ParseResult::SUCCESS ||
         VisitCompoundOperator() == ParseResult::SUCCESS ||

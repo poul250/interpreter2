@@ -18,9 +18,14 @@ class MockModelVisitor : public ModelVisitor {
   MOCK_METHOD(void, VisitRead, (std::string && name), (override));
   MOCK_METHOD(void, VisitWrite, (), (override));
   MOCK_METHOD(void, VisitExpressionOperator, (), (override));
+
   MOCK_METHOD(void, VisitIf, (), (override));
   MOCK_METHOD(void, VisitElse, (), (override));
   MOCK_METHOD(void, VisitEndIf, (), (override));
+
+  MOCK_METHOD(void, VisitWhile, (), (override));
+  MOCK_METHOD(void, VisitWhileBody, (), (override));
+  MOCK_METHOD(void, VisitEndWhile, (), (override));
 
   MOCK_METHOD(void, VisitAssign, (), (override));
   MOCK_METHOD(void, VisitOr, (), (override));

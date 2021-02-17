@@ -139,7 +139,7 @@ void interpreter::instructions::BinaryOp<BinaryOpHandler>::Execute(
   auto& stack = context.values_stack;
   if (stack.size() < 2) {
     // TODO: something smarter pls
-    throw RuntimeError{"bruh"};
+    throw RuntimeError{"Error, no operands for binary expression"};
   }
 
   auto rhs = stack.top();
@@ -157,7 +157,7 @@ void interpreter::instructions::UnaryOp<UnaryOpHandler>::Execute(
   auto stack = context.values_stack;
   if (stack.size() < 1) {
     // TODO: something smarter pls
-    throw RuntimeError{"bruh"};
+    throw RuntimeError{"Error: no operands for unary expression"};
   }
 
   auto value = stack.top();

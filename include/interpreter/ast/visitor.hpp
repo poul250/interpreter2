@@ -46,9 +46,14 @@ class ModelVisitor {
   virtual void VisitRead(std::string&& name) = 0;
   virtual void VisitWrite() = 0;
   virtual void VisitExpressionOperator() = 0;
+
   virtual void VisitIf() = 0;
   virtual void VisitElse() = 0;
   virtual void VisitEndIf() = 0;
+
+  virtual void VisitWhile() = 0;
+  virtual void VisitWhileBody() = 0;
+  virtual void VisitEndWhile() = 0;
 
   // Expression states
   virtual void VisitAssign() = 0;

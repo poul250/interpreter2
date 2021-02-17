@@ -24,9 +24,14 @@ class InstructionsWriter : public ast::ModelVisitor {
   void VisitRead(std::string&& name) override;
   void VisitWrite() override;
   void VisitExpressionOperator() override;
+
   void VisitIf() override;
   void VisitElse() override;
   void VisitEndIf() override;
+
+  void VisitWhile() override;
+  void VisitWhileBody() override;
+  void VisitEndWhile() override;
 
   // Expression States
   void VisitAssign() override;
@@ -51,6 +56,7 @@ class InstructionsWriter : public ast::ModelVisitor {
  private:
   std::vector<std::shared_ptr<Instruction>> instructions_;
   std::stack<std::shared_ptr<JumpInstruction>> jump_stack_;
+  std::stack<Label> label_stack_;
 };
 
 }  // namespace interpreter::instructions

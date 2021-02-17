@@ -76,12 +76,9 @@ void InstructionsWriter::VisitElse() {
     throw WriterError{"Missing if block before else"};
   }
 
-  // take previous jump instruction
-  auto prev_jump_instruction = std::move(jump_stack_.top());
-  jump_stack_.pop();
-
   // jump here from previous jump
-  prev_jump_instruction->SetLabel(instructions_.size());
+  jump_stack_.top()->SetLabel(instructions_.size());
+  jump_stack_.pop();
 
   auto jump = std::make_shared<GoTo>();
   // remember this point
@@ -94,13 +91,29 @@ void InstructionsWriter::VisitEndIf() {
     throw WriterError{"Missing if block before endif"};
   }
 
-  // take previous jump instruction
-  auto prev_jump_instruction = std::move(jump_stack_.top());
+  // jump here from previous jump
+  jump_stack_.top()->SetLabel(instructions_.size() - 1);
+  jump_stack_.pop();
+}
+
+void InstructionsWriter::VisitWhile() {
+  // store current position on the stack
+  label_stack_.push(instructions_.size() - 1);
+}
+void InstructionsWriter::VisitWhileBody() {
+  auto jump_to_end = std::make_shared<JumpFalse>();
+  jump_stack_.push(jump_to_end);
+  instructions_.push_back(std::move(jump_to_end));
+}
+void InstructionsWriter::VisitEndWhile() {
+  if (jump_stack_.empty()) {
+    throw WriterError{"Missing while block before while end"};
+  }
+  jump_stack_.top()->SetLabel(instructions_.size());
   jump_stack_.pop();
 
-  // TODO: is it ok, that we are doing size_t - 1?
-  // jump here from previous jump
-  prev_jump_instruction->SetLabel(instructions_.size() - 1);
+  instructions_.push_back(std::make_shared<GoTo>(label_stack_.top()));
+  label_stack_.pop();
 }
 
 void InstructionsWriter::VisitAssign() {
@@ -122,10 +135,16 @@ void InstructionsWriter::VisitCompare(ast::CompareType compare_type) {
 void InstructionsWriter::VisitAdd(ast::AddType add_type) {
   if (add_type == ast::AddType::PLUS) {
     instructions_.push_back(std::make_shared<BinaryOp<op_type::Plus>>());
+  } else {
+    instructions_.push_back(std::make_shared<BinaryOp<op_type::Minus>>());
   }
 }
 
-void InstructionsWriter::VisitMul(ast::MulType) {}
+void InstructionsWriter::VisitMul(ast::MulType mul_type) {
+  if (mul_type == ast::MulType::MUL) {
+    instructions_.push_back(std::make_shared<BinaryOp<op_type::Mul>>());
+  }
+}
 
 void InstructionsWriter::VisitNot() {}
 
