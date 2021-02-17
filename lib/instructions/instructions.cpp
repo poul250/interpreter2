@@ -23,11 +23,23 @@ struct Writer {
   }
 };
 
+ExecutionContext MakeChildExecutionContext(const ExecutionContext& parent) {
+  return ExecutionContext{.input = parent.input,
+                          .output = parent.output,
+                          .variables = {},
+                          .values_stack = {},
+                          .current_instruction = 0};
+}
+
 }  // namespace
 
-void InstructionsBlock::Execute(ExecutionContext& context) const {
-  for (const auto& instruction : instructions_) {
-    instruction->Execute(context);
+void NoOp::Execute(ExecutionContext& context) const {}
+
+void InstructionsBlock::Execute(ExecutionContext& parent_context) const {
+  auto context = MakeChildExecutionContext(parent_context);
+  while (context.current_instruction < instructions_.size()) {
+    instructions_[context.current_instruction]->Execute(context);
+    ++context.current_instruction;
   }
 }
 
@@ -82,6 +94,25 @@ void InvokeVariable::Execute(ExecutionContext& context) const {
   context.values_stack.push(VisitValues(
       [](auto& value) -> OperationValue { return Reference{std::ref(value)}; },
       variable));
+}
+
+void JumpFalse::Execute(ExecutionContext& context) const {
+  if (context.values_stack.empty()) {
+    throw RuntimeError{"No expressions for perform bool jump"};
+  }
+
+  auto value = context.values_stack.top();
+  context.values_stack.pop();
+
+  const bool if_expression_result =
+      VisitOperationValues(ToBoolVisitor{}, std::move(value));
+  if (!if_expression_result) {
+    context.current_instruction = label_;
+  }
+}
+
+void GoTo::Execute(ExecutionContext& context) const {
+  context.current_instruction = label_;
 }
 
 }  // namespace interpreter::instructions

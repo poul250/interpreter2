@@ -342,9 +342,40 @@ class ModelReader {
     return ParseResult::SUCCESS;
   }
 
+  ParseResult VisitIf() {
+    if (Current().type != LexType::IF) {
+      return ParseResult::FAILURE;
+    }
+
+    Validated(MoveNext(), LexType::OPENING_PARENTHESIS);
+    MoveNext();
+    if (VisitExpression() == ParseResult::FAILURE) {
+      throw ParseOperatorError{"Failed to parse if expression"};
+    }
+    Validated(Current(), LexType::CLOSING_PARENTHESIS);
+
+    visitor_.VisitIf();
+    MoveNext();
+    if (VisitOperator() == ParseResult::FAILURE) {
+      throw ParseOperatorError{"Failed to parse if(true) operation"};
+    }
+
+    if (Current().type == LexType::ELSE) {
+      visitor_.VisitElse();
+      MoveNext();
+      if (VisitOperator() == ParseResult::FAILURE) {
+        throw ParseOperatorError{"Failed to parse if(false) operation"};
+      }
+    }
+    visitor_.VisitEndIf();
+
+    return ParseResult::SUCCESS;
+  }
+
   ParseResult VisitOperator() {
     // using lazy evaluation here
-    if (VisitRead() == ParseResult::SUCCESS ||
+    if (VisitIf() == ParseResult::SUCCESS ||
+        VisitRead() == ParseResult::SUCCESS ||
         VisitWrite() == ParseResult::SUCCESS ||
         VisitCompoundOperator() == ParseResult::SUCCESS ||
         VisitExpressionOperator() == ParseResult::SUCCESS) {

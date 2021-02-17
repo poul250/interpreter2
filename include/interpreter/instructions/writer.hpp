@@ -9,6 +9,10 @@
 
 namespace interpreter::instructions {
 
+struct WriterError : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+
 class InstructionsWriter : public ast::ModelVisitor {
  public:
   void VisitProgram() override;
@@ -20,6 +24,9 @@ class InstructionsWriter : public ast::ModelVisitor {
   void VisitRead(std::string&& name) override;
   void VisitWrite() override;
   void VisitExpressionOperator() override;
+  void VisitIf() override;
+  void VisitElse() override;
+  void VisitEndIf() override;
 
   // Expression States
   void VisitAssign() override;
@@ -36,9 +43,14 @@ class InstructionsWriter : public ast::ModelVisitor {
     return instructions_;
   }
 
+  // pls do something better
+  [[nodiscard]] inline InstructionsBlock MakeBlock() noexcept {
+    return InstructionsBlock{std::move(instructions_)};
+  }
+
  private:
-  // TODO: should it be std::vector<std::shared_ptr<...>>?
-  std::vector<std::unique_ptr<Instruction>> instructions_;
+  std::vector<std::shared_ptr<Instruction>> instructions_;
+  std::stack<std::shared_ptr<JumpInstruction>> jump_stack_;
 };
 
 }  // namespace interpreter::instructions

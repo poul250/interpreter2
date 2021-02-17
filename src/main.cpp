@@ -7,13 +7,11 @@
 void interpret(std::istream& code, std::istream& input, std::ostream& output) {
   interpreter::instructions::InstructionsWriter writer;
   interpreter::ast::VisitCode(code, writer);
-  const auto& instructions = writer.GetInstructions();
+  const auto instructions_block = writer.MakeBlock();
 
   interpreter::instructions::ExecutionContext context{
       .input = input, .output = output, .variables = {}};
-  for (const auto& instruction : instructions) {
-    instruction->Execute(context);
-  }
+  instructions_block.Execute(context);
 }
 
 int main(int argc, char** argv) {

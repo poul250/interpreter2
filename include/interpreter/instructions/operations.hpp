@@ -1,12 +1,17 @@
 #pragma once
 
 #include <functional>
+#include <stdexcept>
 #include <string>
 #include <variant>
 
 #include "interpreter/utils/types/types_variant.hpp"
 
 namespace interpreter::instructions {
+
+struct ValueError : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
 
 namespace types {
 
@@ -26,6 +31,8 @@ struct Op {};
 struct Assign : Op {};
 struct Plus : Op {};
 struct Minus : Op {};
+struct Or : Op {};
+struct And : Op {};
 // struct Mul : Op{};
 // struct Div : Op{};
 // struct Mod : Op{};
@@ -70,7 +77,21 @@ struct Less {
 template <typename L, typename R>
 struct Greater {
   constexpr auto operator()(const L& lhs, const R& rhs) const {
-    return lhs < rhs;
+    return lhs > rhs;
+  }
+};
+
+template <typename L, typename R>
+struct Or {
+  constexpr auto operator()(const L& lhs, const R& rhs) const {
+    return lhs || rhs;
+  }
+};
+
+template <typename L, typename R>
+struct And {
+  constexpr auto operator()(const L& lhs, const R& rhs) const {
+    return lhs && rhs;
   }
 };
 
@@ -134,18 +155,41 @@ ADD_DEFAULT_RULE(Bool&, Assign, Bool);
 #undef ADD_RULE
 #undef ADD_DEFAULT_RULE
 
+// TODO: should I add the bool rule?
+struct ToBoolVisitor {
+  template <typename T>
+  constexpr bool operator()(const T& value) const {
+    if constexpr (std::is_same_v<std::decay_t<T>, types::Bool>) {
+      return value;
+    } else {
+      throw ValueError{"Failed to cast to bool"};
+    }
+  }
+  template <typename T>
+  constexpr bool operator()(std::reference_wrapper<T> value) const {
+    if constexpr (std::is_same_v<std::decay_t<T>, types::Bool>) {
+      return value;
+    } else {
+      throw ValueError{"Failed to cast to bool"};
+    }
+  }
+};
+
 template <typename L, typename Op, typename R>
 struct IsPerformable
     : std::conditional_t<
           std::is_base_of_v<details::operations::NotAllowed, Rule<L, Op, R>>,
           std::false_type, std::true_type> {};
 
-// for type deduction magic
+template <typename L, typename Op, typename R>
+inline constexpr bool IsPerformableV = IsPerformable<L, Op, R>::value;
+
+// think about how optimize this
 template <typename Op>
 struct Perform {
   template <typename L, typename R>
   constexpr OperationValue operator()(const L& lhs, const R& rhs) const {
-    if constexpr (IsPerformable<std::decay_t<L>, Op, std::decay_t<R>>::value) {
+    if constexpr (IsPerformableV<std::decay_t<L>, Op, std::decay_t<R>>) {
       return Rule<std::decay_t<L>, Op, std::decay_t<R>>{}(lhs, rhs);
     } else {
       // pls smt smarter
@@ -154,10 +198,16 @@ struct Perform {
   }
 
   template <typename L, typename R>
-  constexpr OperationValue operator()(std::reference_wrapper<L> lhs,
+  constexpr OperationValue operator()(std::reference_wrapper<L> wrapped_lhs,
                                       const R& rhs) const {
-    if constexpr (IsPerformable<std::decay_t<L>&, Op, std::decay_t<R>>::value) {
-      return Rule<std::decay_t<L>&, Op, std::decay_t<R>>{}(lhs.get(), rhs);
+    using Lhs = std::decay_t<L>;
+    using Rhs = std::decay_t<R>;
+    L& lhs = wrapped_lhs.get();
+
+    if constexpr (IsPerformableV<Lhs&, Op, Rhs>) {
+      return Rule<Lhs&, Op, Rhs>{}(lhs, rhs);
+    } else if constexpr (IsPerformableV<Lhs, Op, Rhs>) {
+      return Rule<Lhs, Op, Rhs>{}(lhs, rhs);
     } else {
       // pls smt smarter
       throw "bruh";
@@ -165,10 +215,16 @@ struct Perform {
   }
 
   template <typename L, typename R>
-  constexpr OperationValue operator()(const L& lhs,
-                                      std::reference_wrapper<R> rhs) const {
-    if constexpr (IsPerformable<std::decay_t<L>, Op, std::decay_t<R>>::value) {
-      return Rule<std::decay_t<L>, Op, std::decay_t<R>>{}(lhs, rhs.get());
+  constexpr OperationValue operator()(
+      const L& lhs, std::reference_wrapper<R> wrapped_rhs) const {
+    using Lhs = std::decay_t<L>;
+    using Rhs = std::decay_t<R>;
+    R& rhs = wrapped_rhs.get();
+
+    if constexpr (IsPerformableV<Lhs, Op, Rhs&>) {
+      return Rule<Lhs, Op, Rhs&>{}(lhs, rhs);
+    } else if constexpr (IsPerformableV<Lhs, Op, Rhs>) {
+      return Rule<Lhs, Op, Rhs>{}(lhs, rhs);
     } else {
       // pls smt smarter
       throw "bruh";
@@ -176,10 +232,22 @@ struct Perform {
   }
 
   template <typename L, typename R>
-  constexpr OperationValue operator()(std::reference_wrapper<L> lhs,
-                                      std::reference_wrapper<R> rhs) const {
-    if constexpr (IsPerformable<std::decay_t<L>, Op, std::decay_t<R>>::value) {
-      return Rule<std::decay_t<L>, Op, std::decay_t<R>>{}(lhs.get(), rhs.get());
+  constexpr OperationValue operator()(
+      std::reference_wrapper<L> wrapped_lhs,
+      std::reference_wrapper<R> wrapped_rhs) const {
+    using Lhs = std::decay_t<L>;
+    using Rhs = std::decay_t<R>;
+    L& lhs = wrapped_lhs.get();
+    R& rhs = wrapped_rhs.get();
+
+    if constexpr (IsPerformableV<Lhs&, Op, Rhs&>) {
+      return Rule<Lhs&, Op, Rhs&>{}(lhs, rhs);
+    } else if constexpr (IsPerformableV<Lhs&, Op, Rhs>) {
+      return Rule<Lhs&, Op, Rhs>{}(lhs, rhs);
+    } else if constexpr (IsPerformableV<Lhs, Op, Rhs&>) {
+      return Rule<Lhs, Op, Rhs&>{}(lhs, rhs);
+    } else if constexpr (IsPerformableV<Lhs, Op, Rhs>) {
+      return Rule<Lhs, Op, Rhs>{}(lhs, rhs);
     } else {
       // pls smt smarter
       throw "bruh";

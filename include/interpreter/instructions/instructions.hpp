@@ -15,11 +15,15 @@ struct RuntimeError : public std::runtime_error {
   using runtime_error::runtime_error;
 };
 
+using Label = size_t;
+
 struct ExecutionContext {
+  // TODO: add reference to parent
   std::istream& input;
   std::ostream& output;
   std::unordered_map<std::string, Value> variables;
   std::stack<OperationValue> values_stack;
+  Label current_instruction;
 };
 
 class Instruction {
@@ -28,16 +32,20 @@ class Instruction {
   virtual ~Instruction() = default;
 };
 
+class NoOp : public Instruction {
+ public:
+  void Execute(ExecutionContext& context) const;
+};
+
 class InstructionsBlock : public Instruction {
  public:
-  // TODO: should it be shared_ptr?
   inline InstructionsBlock(
-      std::vector<std::unique_ptr<Instruction>> instructions)
+      std::vector<std::shared_ptr<Instruction>> instructions)
       : instructions_{std::move(instructions)} {}
   void Execute(ExecutionContext& context) const override;
 
  private:
-  std::vector<std::unique_ptr<Instruction>> instructions_;
+  std::vector<std::shared_ptr<Instruction>> instructions_;
 };
 
 class VariableDefinition : public Instruction {
@@ -88,6 +96,27 @@ class InvokeVariable : public Instruction {
 
  private:
   std::string name_;
+};
+
+class JumpInstruction : public Instruction {
+ public:
+  inline JumpInstruction(Label label) noexcept : label_{label} {}
+  inline void SetLabel(Label label) noexcept { label_ = label; }
+
+ protected:
+  Label label_;
+};
+
+class GoTo : public JumpInstruction {
+ public:
+  inline GoTo(Label label = 0) noexcept : JumpInstruction{label} {}
+  void Execute(ExecutionContext& context) const override;
+};
+
+class JumpFalse : public JumpInstruction {
+ public:
+  inline JumpFalse(Label label = 0) noexcept : JumpInstruction{label} {}
+  void Execute(ExecutionContext& context) const override;
 };
 
 template <typename BinaryOpHandler>
