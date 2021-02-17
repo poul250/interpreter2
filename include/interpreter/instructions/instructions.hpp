@@ -154,7 +154,7 @@ void interpreter::instructions::BinaryOp<BinaryOpHandler>::Execute(
 template <typename UnaryOpHandler>
 void interpreter::instructions::UnaryOp<UnaryOpHandler>::Execute(
     ExecutionContext& context) const {
-  auto stack = context.values_stack;
+  auto& stack = context.values_stack;
   if (stack.size() < 1) {
     // TODO: something smarter pls
     throw RuntimeError{"Error: no operands for unary expression"};
@@ -163,5 +163,5 @@ void interpreter::instructions::UnaryOp<UnaryOpHandler>::Execute(
   auto value = stack.top();
   stack.pop();
 
-  stack.push(UnaryOpHandler{}(std::move(value)));
+  stack.push(PerformOperation<UnaryOpHandler>(std::move(value)));
 }

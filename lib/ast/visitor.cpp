@@ -129,7 +129,7 @@ class ModelReader {
   Constant GetConstant() {
     const auto constant = Validated(Current(), lexer::IsConstant);
     MoveNext();
-  
+
     if (constant.type == LexType::FALSE || constant.type == LexType::TRUE) {
       return {VariableType::BOOL, constant.type == LexType::TRUE};
     }
@@ -165,12 +165,20 @@ class ModelReader {
   }
 
   ParseResult VisitNot() {
-    while (Current().type == LexType::NOT) {
-      visitor_.VisitNot();
+    bool has_not = false;
+    if (Current().type == LexType::NOT) {
+      has_not = true;
       MoveNext();
     }
 
-    return VisitAtom();
+    const auto atom_result = VisitAtom();
+    if (has_not && atom_result == ParseResult::FAILURE) {
+      throw ParseExpressionError{"Missing expression after not"};
+    }
+    if (has_not) {
+      visitor_.VisitNot();
+    }
+    return atom_result;
   }
 
   ParseResult VisitMul() {

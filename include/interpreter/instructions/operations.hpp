@@ -35,8 +35,9 @@ struct Or : Op {};
 struct And : Op {};
 struct Mul : Op {};
 // struct Div : Op{};
-struct Mod : Op{};
-struct Equals : Op{};
+struct Mod : Op {};
+struct Not : Op {};
+struct Equals : Op {};
 struct Less : Op {};
 struct Greater : Op {};
 struct LessOrEq : Op {};
@@ -50,15 +51,21 @@ namespace operations {
 
 struct NotAllowed {};
 
-#define ADD_DEFAULT_ASSIGN_OPERATION(name, op)                           \
-  template <typename L, typename R>                               \
-  struct name {                                                   \
+#define ADD_DEFAULT_ASSIGN_OPERATION(name, op)              \
+  template <typename L, typename R>                         \
+  struct name {                                             \
     constexpr auto operator()(L& lhs, const R& rhs) const { \
-      return lhs op rhs;                                          \
-    }                                                             \
+      return lhs op rhs;                                    \
+    }                                                       \
   }
 
-#define ADD_DEFAULT_OPERATION(name, op)                           \
+#define ADD_DEFAULT_UN_OPERATION(name, op)                       \
+  template <typename T>                                          \
+  struct name {                                                  \
+    constexpr auto operator()(const T& t) const { return op t; } \
+  }
+
+#define ADD_DEFAULT_BIN_OPERATION(name, op)                       \
   template <typename L, typename R>                               \
   struct name {                                                   \
     constexpr auto operator()(const L& lhs, const R& rhs) const { \
@@ -68,24 +75,32 @@ struct NotAllowed {};
 
 ADD_DEFAULT_ASSIGN_OPERATION(Assign, =);
 
-ADD_DEFAULT_OPERATION(Plus, +);
-ADD_DEFAULT_OPERATION(Minus, -);
-ADD_DEFAULT_OPERATION(Mul, *);
-ADD_DEFAULT_OPERATION(Mod, %);
-ADD_DEFAULT_OPERATION(Equals, ==);
-ADD_DEFAULT_OPERATION(Less, <);
-ADD_DEFAULT_OPERATION(Greater, >);
-ADD_DEFAULT_OPERATION(LessOrEq, <=);
-ADD_DEFAULT_OPERATION(GreaterOrEq, >=);
-ADD_DEFAULT_OPERATION(Or, ||);
-ADD_DEFAULT_OPERATION(And, &&);
+ADD_DEFAULT_UN_OPERATION(Not, !);
+ADD_DEFAULT_UN_OPERATION(UnaryMinus, -);
+
+ADD_DEFAULT_BIN_OPERATION(Plus, +);
+ADD_DEFAULT_BIN_OPERATION(Minus, -);
+ADD_DEFAULT_BIN_OPERATION(Mul, *);
+ADD_DEFAULT_BIN_OPERATION(Mod, %);
+ADD_DEFAULT_BIN_OPERATION(Equals, ==);
+ADD_DEFAULT_BIN_OPERATION(Less, <);
+ADD_DEFAULT_BIN_OPERATION(Greater, >);
+ADD_DEFAULT_BIN_OPERATION(LessOrEq, <=);
+ADD_DEFAULT_BIN_OPERATION(GreaterOrEq, >=);
+ADD_DEFAULT_BIN_OPERATION(Or, ||);
+ADD_DEFAULT_BIN_OPERATION(And, &&);
 
 #undef ADD_DEFAULT_ASSIGN_OPERATION
-#undef ADD_DEFAULT_OPERATION
+#undef ADD_DEFAULT_BIN_OPERATION
+#undef ADD_DEFAULT_UN_OPERATION
 
 }  // namespace operations
 
 }  // namespace details
+
+// TODO: pls variadic template
+template <typename Op, typename T>
+struct UnRule : details::operations::NotAllowed {};
 
 template <typename L, typename Op, typename R>
 struct Rule : details::operations::NotAllowed {};
@@ -95,6 +110,11 @@ struct Rule : details::operations::NotAllowed {};
   template <>                                  \
   struct Rule<types::l, op_type::op, types::r> \
       : details::operations::op<types::l, types::r> {}
+
+// Sorry about that, no reflection for now
+#define ADD_DEFAULT_UN_RULE(op, t) \
+  template <>                      \
+  struct UnRule<op_type::op, types::t> : details::operations::op<types::t> {}
 
 #define ADD_RULE(l, op, r, handler)                                            \
   template <>                                                                  \
@@ -120,6 +140,9 @@ ADD_DEFAULT_RULE(Int, Minus, Real);
 ADD_DEFAULT_RULE(Int, Mul, Real);
 
 ADD_DEFAULT_RULE(Str, Plus, Str);
+
+// unary arithmetical rules
+// TODO: add them ;)
 
 // compare rules
 ADD_DEFAULT_RULE(Int, Equals, Int);
@@ -152,6 +175,11 @@ ADD_DEFAULT_RULE(Str, Greater, Str);
 ADD_DEFAULT_RULE(Str, LessOrEq, Str);
 ADD_DEFAULT_RULE(Str, GreaterOrEq, Str);
 
+// boolean operations
+ADD_DEFAULT_RULE(Bool, And, Bool);
+ADD_DEFAULT_RULE(Bool, Or, Bool);
+ADD_DEFAULT_UN_RULE(Not, Bool);
+
 // assign rules
 ADD_DEFAULT_RULE(Int&, Assign, Int);
 ADD_DEFAULT_RULE(Real&, Assign, Real);
@@ -183,18 +211,49 @@ struct ToBoolVisitor {
   }
 };
 
+// TODO: pls do variadic template
 template <typename L, typename Op, typename R>
 struct IsPerformable
     : std::conditional_t<
           std::is_base_of_v<details::operations::NotAllowed, Rule<L, Op, R>>,
           std::false_type, std::true_type> {};
 
+template <typename Op, typename T>
+struct IsUnPerformable
+    : std::conditional_t<
+          std::is_base_of_v<details::operations::NotAllowed, UnRule<Op, T>>,
+          std::false_type, std::true_type> {};
+
 template <typename L, typename Op, typename R>
 inline constexpr bool IsPerformableV = IsPerformable<L, Op, R>::value;
 
+template <typename Op, typename T>
+inline constexpr bool IsUnPerformableV = IsUnPerformable<Op, T>::value;
+
 // think about how optimize this
+// TODO: pls variadic templates
 template <typename Op>
 struct Perform {
+  template <typename T>
+  constexpr OperationValue operator()(const T& value) const {
+    if constexpr (IsUnPerformableV<Op, std::decay_t<T>>) {
+      return UnRule<Op, std::decay_t<T>>{}(value);
+    } else {
+      // pls smt smarter
+      throw "bruh";
+    }
+  }
+
+  template <typename T>
+  constexpr OperationValue operator()(std::reference_wrapper<T> ref) const {
+    if constexpr (IsUnPerformableV<Op, std::decay_t<T>>) {
+      return UnRule<Op, std::decay_t<T>>{}(ref.get());
+    } else {
+      // pls smt smarter
+      throw "bruh";
+    }
+  }
+
   template <typename L, typename R>
   constexpr OperationValue operator()(const L& lhs, const R& rhs) const {
     if constexpr (IsPerformableV<std::decay_t<L>, Op, std::decay_t<R>>) {
@@ -278,6 +337,11 @@ auto VisitOperationValues(Visitor&& visitor,
                           std::forward<Args>(args)...);
       },
       std::forward<OperationValues>(operation_values)...);
+}
+
+template <typename Op>
+constexpr OperationValue PerformOperation(OperationValue value) {
+  return VisitOperationValues(Perform<Op>{}, std::move(value));
 }
 
 template <typename Op>

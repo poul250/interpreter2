@@ -42,8 +42,7 @@ std::shared_ptr<Instruction> MakeCompareInstruction(
   throw WriterError{"Unimplemented mapping for ast::CompareType"};
 }
 
-std::shared_ptr<Instruction> MakeAddInstruction(
-    ast::AddType mul_type) {
+std::shared_ptr<Instruction> MakeAddInstruction(ast::AddType mul_type) {
   // TODO: pls smt smarter
   using Add = ast::AddType;
   switch (mul_type) {
@@ -56,8 +55,7 @@ std::shared_ptr<Instruction> MakeAddInstruction(
   throw WriterError{"Unimplemented mapping for ast::CompareType"};
 }
 
-std::shared_ptr<Instruction> MakeMulInstruction(
-    ast::MulType mul_type) {
+std::shared_ptr<Instruction> MakeMulInstruction(ast::MulType mul_type) {
   // TODO: pls smt smarter
   using Mul = ast::MulType;
   switch (mul_type) {
@@ -170,10 +168,10 @@ void InstructionsWriter::VisitBreak() {
     throw WriterError{"break instruction outside the loop"};
   }
   auto break_jump = std::make_shared<GoTo>();
-  
+
   // remember break for filling it in the end of loop
   loops_breaks_stack_.top().push_back(break_jump);
-  
+
   // just put break instruction here
   instructions_.push_back(std::move(break_jump));
 }
@@ -211,7 +209,9 @@ void InstructionsWriter::VisitMul(ast::MulType mul_type) {
   instructions_.push_back(MakeMulInstruction(mul_type));
 }
 
-void InstructionsWriter::VisitNot() {}
+void InstructionsWriter::VisitNot() {
+  instructions_.push_back(std::make_shared<UnaryOp<op_type::Not>>());
+}
 
 void InstructionsWriter::VisitVariableInvokation(std::string&& variable_name) {
   instructions_.push_back(

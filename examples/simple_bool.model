@@ -1,0 +1,8 @@
+program {
+    int x = 10;
+    if (not (x > 15)) {
+        write("da");
+    } else {
+        write("net");
+    }
+}
