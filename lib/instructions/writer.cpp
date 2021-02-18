@@ -29,6 +29,8 @@ std::shared_ptr<Instruction> MakeCompareInstruction(
     // waiting for c++20 using enums
     case Compare::EQ:
       return std::make_shared<BinaryOp<op_type::Equals>>();
+    case Compare::NE:
+      return std::make_shared<BinaryOp<op_type::NotEquals>>();
     case Compare::LT:
       return std::make_shared<BinaryOp<op_type::Less>>();
     case Compare::GT:
@@ -52,7 +54,7 @@ std::shared_ptr<Instruction> MakeAddInstruction(ast::AddType mul_type) {
     case Add::MINUS:
       return std::make_shared<BinaryOp<op_type::Minus>>();
   }
-  throw WriterError{"Unimplemented mapping for ast::CompareType"};
+  throw WriterError{"Unimplemented mapping for ast::AddType"};
 }
 
 std::shared_ptr<Instruction> MakeMulInstruction(ast::MulType mul_type) {
@@ -62,11 +64,13 @@ std::shared_ptr<Instruction> MakeMulInstruction(ast::MulType mul_type) {
     // waiting for c++20 using enums
     case Mul::MUL:
       return std::make_shared<BinaryOp<op_type::Mul>>();
+    case Mul::DIV:
+      return std::make_shared<BinaryOp<op_type::Div>>();
     case Mul::MOD:
       return std::make_shared<BinaryOp<op_type::Mod>>();
       // TODO: all operations
   }
-  throw WriterError{"Unimplemented mapping for ast::CompareType"};
+  throw WriterError{"Unimplemented mapping for ast::MulType"};
 }
 
 }  // namespace

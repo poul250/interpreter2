@@ -13,6 +13,10 @@ struct ValueError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
+struct ZeroDivisionError : public ValueError {
+  using ValueError::ValueError;
+};
+
 namespace types {
 
 using Bool = bool;
@@ -34,15 +38,18 @@ struct Minus : Op {};
 struct Or : Op {};
 struct And : Op {};
 struct Mul : Op {};
-// struct Div : Op{};
+struct Div : Op {};
 struct Mod : Op {};
-struct Not : Op {};
 struct Equals : Op {};
+struct NotEquals : Op {};
 struct Less : Op {};
 struct Greater : Op {};
 struct LessOrEq : Op {};
 struct GreaterOrEq : Op {};
-// struct NotEquals : Op{};
+
+struct Not : Op {};
+struct UnaryMinus : Op {};
+struct UnaryPlus : Op {};
 }  // namespace op_type
 
 namespace details {
@@ -50,6 +57,16 @@ namespace details {
 namespace operations {
 
 struct NotAllowed {};
+
+template <typename L, typename R>
+struct Div {
+  constexpr auto operator()(const L& lhs, const R& rhs) const {
+    if (rhs == 0) {
+      throw ZeroDivisionError{"zero division"};
+    }
+    return lhs / rhs;
+  }
+};
 
 #define ADD_DEFAULT_ASSIGN_OPERATION(name, op)              \
   template <typename L, typename R>                         \
@@ -77,12 +94,14 @@ ADD_DEFAULT_ASSIGN_OPERATION(Assign, =);
 
 ADD_DEFAULT_UN_OPERATION(Not, !);
 ADD_DEFAULT_UN_OPERATION(UnaryMinus, -);
+ADD_DEFAULT_UN_OPERATION(UnaryPlus, +);
 
 ADD_DEFAULT_BIN_OPERATION(Plus, +);
 ADD_DEFAULT_BIN_OPERATION(Minus, -);
 ADD_DEFAULT_BIN_OPERATION(Mul, *);
 ADD_DEFAULT_BIN_OPERATION(Mod, %);
 ADD_DEFAULT_BIN_OPERATION(Equals, ==);
+ADD_DEFAULT_BIN_OPERATION(NotEquals, !=);
 ADD_DEFAULT_BIN_OPERATION(Less, <);
 ADD_DEFAULT_BIN_OPERATION(Greater, >);
 ADD_DEFAULT_BIN_OPERATION(LessOrEq, <=);
@@ -126,50 +145,63 @@ ADD_DEFAULT_RULE(Int, Plus, Int);
 ADD_DEFAULT_RULE(Int, Minus, Int);
 ADD_DEFAULT_RULE(Int, Mul, Int);
 ADD_DEFAULT_RULE(Int, Mod, Int);
+ADD_DEFAULT_RULE(Int, Div, Int);
 
 ADD_DEFAULT_RULE(Real, Plus, Real);
 ADD_DEFAULT_RULE(Real, Minus, Real);
 ADD_DEFAULT_RULE(Real, Mul, Real);
+ADD_DEFAULT_RULE(Real, Div, Real);
 
 ADD_DEFAULT_RULE(Real, Plus, Int);
 ADD_DEFAULT_RULE(Real, Minus, Int);
 ADD_DEFAULT_RULE(Real, Mul, Int);
+ADD_DEFAULT_RULE(Real, Div, Int);
 
 ADD_DEFAULT_RULE(Int, Plus, Real);
 ADD_DEFAULT_RULE(Int, Minus, Real);
 ADD_DEFAULT_RULE(Int, Mul, Real);
+ADD_DEFAULT_RULE(Int, Div, Real);
 
 ADD_DEFAULT_RULE(Str, Plus, Str);
 
 // unary arithmetical rules
-// TODO: add them ;)
+ADD_DEFAULT_UN_RULE(UnaryPlus, Int);
+ADD_DEFAULT_UN_RULE(UnaryMinus, Int);
+
+ADD_DEFAULT_UN_RULE(UnaryPlus, Real);
+ADD_DEFAULT_UN_RULE(UnaryMinus, Real);
 
 // compare rules
 ADD_DEFAULT_RULE(Int, Equals, Int);
+ADD_DEFAULT_RULE(Int, NotEquals, Int);
 ADD_DEFAULT_RULE(Int, Less, Int);
 ADD_DEFAULT_RULE(Int, Greater, Int);
 ADD_DEFAULT_RULE(Int, LessOrEq, Int);
 ADD_DEFAULT_RULE(Int, GreaterOrEq, Int);
 
 ADD_DEFAULT_RULE(Real, Equals, Real);
+ADD_DEFAULT_RULE(Real, NotEquals, Real);
 ADD_DEFAULT_RULE(Real, Less, Real);
 ADD_DEFAULT_RULE(Real, Greater, Real);
 ADD_DEFAULT_RULE(Real, LessOrEq, Real);
 ADD_DEFAULT_RULE(Real, GreaterOrEq, Real);
 
 ADD_DEFAULT_RULE(Real, Equals, Int);
+ADD_DEFAULT_RULE(Real, NotEquals, Int);
 ADD_DEFAULT_RULE(Real, Less, Int);
 ADD_DEFAULT_RULE(Real, Greater, Int);
 ADD_DEFAULT_RULE(Real, LessOrEq, Int);
 ADD_DEFAULT_RULE(Real, GreaterOrEq, Int);
 
 ADD_DEFAULT_RULE(Int, Equals, Real);
+ADD_DEFAULT_RULE(Int, NotEquals, Real);
 ADD_DEFAULT_RULE(Int, Less, Real);
 ADD_DEFAULT_RULE(Int, Greater, Real);
 ADD_DEFAULT_RULE(Int, LessOrEq, Real);
 ADD_DEFAULT_RULE(Int, GreaterOrEq, Real);
 
 ADD_DEFAULT_RULE(Str, Equals, Str);
+ADD_DEFAULT_RULE(Str, NotEquals, Str);
 ADD_DEFAULT_RULE(Str, Less, Str);
 ADD_DEFAULT_RULE(Str, Greater, Str);
 ADD_DEFAULT_RULE(Str, LessOrEq, Str);

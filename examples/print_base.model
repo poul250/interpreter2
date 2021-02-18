@@ -1,0 +1,15 @@
+program {
+    int a, base;
+    int pow = 1;
+    read(a);
+    read(base);
+
+    while ((a / pow) > (base - 1)) {
+        pow = pow * base;
+    }
+
+    while (pow > 0) {
+        write((a / pow) % base);
+        pow = pow / base;
+    }
+}
