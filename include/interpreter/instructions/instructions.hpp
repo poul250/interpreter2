@@ -39,7 +39,7 @@ class NoOp : public Instruction {
 
 class InstructionsBlock : public Instruction {
  public:
-  inline InstructionsBlock(
+  inline explicit InstructionsBlock(
       std::vector<std::shared_ptr<Instruction>> instructions)
       : instructions_{std::move(instructions)} {}
   void Execute(ExecutionContext& context) const override;
@@ -50,7 +50,7 @@ class InstructionsBlock : public Instruction {
 
 class VariableDefinition : public Instruction {
  public:
-  inline VariableDefinition(std::string name, Value initial_value) noexcept
+  inline explicit VariableDefinition(std::string name, Value initial_value) noexcept
       : name_{std::move(name)}, initial_value_{std::move(initial_value)} {}
   void Execute(ExecutionContext& context) const override;
 
@@ -66,7 +66,7 @@ class Write : public Instruction {
 
 class Read : public Instruction {
  public:
-  inline Read(std::string variable_name) noexcept
+  inline explicit Read(std::string variable_name) noexcept
       : variable_name_{std::move(variable_name)} {}
   void Execute(ExecutionContext& context) const override;
 
@@ -82,7 +82,7 @@ class Pop : public Instruction {
 class InvokeConstant : public Instruction {
  public:
   // TODO: dont use Variable
-  inline InvokeConstant(Value value) noexcept : value_{std::move(value)} {}
+  inline explicit InvokeConstant(Value value) noexcept : value_{std::move(value)} {}
   void Execute(ExecutionContext& context) const override;
 
  private:
@@ -91,7 +91,7 @@ class InvokeConstant : public Instruction {
 
 class InvokeVariable : public Instruction {
  public:
-  inline InvokeVariable(std::string name) noexcept : name_{std::move(name)} {}
+  inline explicit InvokeVariable(std::string name) noexcept : name_{std::move(name)} {}
   void Execute(ExecutionContext& context) const override;
 
  private:
@@ -100,7 +100,7 @@ class InvokeVariable : public Instruction {
 
 class JumpInstruction : public Instruction {
  public:
-  inline JumpInstruction(Label label) noexcept : label_{label} {}
+  inline explicit JumpInstruction(Label label) noexcept : label_{label} {}
   inline void SetLabel(Label label) noexcept { label_ = label; }
 
  protected:
@@ -109,13 +109,13 @@ class JumpInstruction : public Instruction {
 
 class GoTo : public JumpInstruction {
  public:
-  inline GoTo(Label label = 0) noexcept : JumpInstruction{label} {}
+  inline explicit GoTo(Label label = 0) noexcept : JumpInstruction{label} {}
   void Execute(ExecutionContext& context) const override;
 };
 
 class JumpFalse : public JumpInstruction {
  public:
-  inline JumpFalse(Label label = 0) noexcept : JumpInstruction{label} {}
+  inline explicit JumpFalse(Label label = 0) noexcept : JumpInstruction{label} {}
   void Execute(ExecutionContext& context) const override;
 };
 
