@@ -1,4 +1,8 @@
 # interpreter2
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/241d5c2c7064434b93971bfdff9fb98e)](https://www.codacy.com/gh/poul250/interpreter2/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=poul250/interpreter2&amp;utm_campaign=Badge_Grade)
+[![CodeFactor](https://www.codefactor.io/repository/github/poul250/interpreter2/badge)](https://www.codefactor.io/repository/github/poul250/interpreter2)
+[![Build Status](https://travis-ci.com/poul250/interpreter2.svg?branch=master)](https://travis-ci.com/poul250/interpreter2)
+[![License](http://img.shields.io/github/license/poul250/interpreter2)]()
 ## Interpreter of a model programming language
 This interpreter is a modification of https://github.com/poul250/interpreter.
 
