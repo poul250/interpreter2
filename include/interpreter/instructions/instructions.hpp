@@ -50,7 +50,8 @@ class InstructionsBlock : public Instruction {
 
 class VariableDefinition : public Instruction {
  public:
-  inline explicit VariableDefinition(std::string name, Value initial_value) noexcept
+  inline explicit VariableDefinition(std::string name,
+                                     Value initial_value) noexcept
       : name_{std::move(name)}, initial_value_{std::move(initial_value)} {}
   void Execute(ExecutionContext& context) const override;
 
@@ -82,7 +83,8 @@ class Pop : public Instruction {
 class InvokeConstant : public Instruction {
  public:
   // TODO: dont use Variable
-  inline explicit InvokeConstant(Value value) noexcept : value_{std::move(value)} {}
+  inline explicit InvokeConstant(Value value) noexcept
+      : value_{std::move(value)} {}
   void Execute(ExecutionContext& context) const override;
 
  private:
@@ -91,7 +93,8 @@ class InvokeConstant : public Instruction {
 
 class InvokeVariable : public Instruction {
  public:
-  inline explicit InvokeVariable(std::string name) noexcept : name_{std::move(name)} {}
+  inline explicit InvokeVariable(std::string name) noexcept
+      : name_{std::move(name)} {}
   void Execute(ExecutionContext& context) const override;
 
  private:
@@ -115,7 +118,8 @@ class GoTo : public JumpInstruction {
 
 class JumpFalse : public JumpInstruction {
  public:
-  inline explicit JumpFalse(Label label = 0) noexcept : JumpInstruction{label} {}
+  inline explicit JumpFalse(Label label = 0) noexcept
+      : JumpInstruction{label} {}
   void Execute(ExecutionContext& context) const override;
 };
 
