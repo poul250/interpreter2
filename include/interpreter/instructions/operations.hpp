@@ -7,8 +7,16 @@
 
 namespace interpreter::instructions {
 
-struct ZeroDivisionError : public ValueError {
+struct OperationError : public ValueError {
   using ValueError::ValueError;
+};
+
+struct NotDefinedOperationError : public OperationError {
+  using OperationError::OperationError;
+};
+
+struct ZeroDivisionError : public OperationError {
+  using OperationError::OperationError;
 };
 
 using OperationValue = std::variant<Value, Reference>;
@@ -37,6 +45,9 @@ struct Not : Op {};
 struct UnaryMinus : Op {};
 struct UnaryPlus : Op {};
 }  // namespace op_type
+
+template <typename T>
+concept OperationT = std::is_base_of_v<op_type::Op, T>;
 
 namespace details {
 
@@ -100,8 +111,6 @@ ADD_DEFAULT_BIN_OPERATION(And, &&);
 #undef ADD_DEFAULT_UN_OPERATION
 
 }  // namespace operations
-
-}  // namespace details
 
 template <typename Op, WeakValueT... Values>
 struct Rule : details::operations::NotAllowed {};
@@ -214,8 +223,6 @@ constexpr bool IsPerformableRule(Rule<Op, Types...>) {
   return IsPerformableV<Op, Types...>;
 }
 
-namespace details {
-
 // TODO: looks wierd, try to make better solution
 template <typename Op, size_t I, size_t... Left, size_t... Right,
           WeakValueT... Types>
@@ -241,8 +248,7 @@ template <typename Op, size_t I, size_t... Left, size_t... Right,
     return Rule<Op, std::tuple_element_t<Left, TupleType>...,
                 std::decay_t<CurrentType>,
                 std::tuple_element_t<Right, TupleType>...>{};
-  } else if constexpr (constexpr auto deduced = GetDeducedPerformRuleImpl<Op,
-                                                                          I>(
+  } else if constexpr (auto deduced = GetDeducedPerformRuleImpl<Op, I>(
                            left, right,
                            utils::TypeTag<std::tuple<
                                std::tuple_element_t<Left, TupleType>...,
@@ -280,8 +286,6 @@ template <typename Op, WeakValueT... Types>
   }
 }
 
-}  // namespace details
-
 template <typename T>
 struct PerformTraits;
 
@@ -296,9 +300,6 @@ struct PerformTraits<T> {
       std::add_lvalue_reference_t<typename TypeTraits<T>::ValueType>;
 };
 
-template <typename T>
-auto Unwrap();
-
 template <ValueT T>
 inline constexpr const T& Unwrap(const T& value) noexcept {
   return value;
@@ -310,27 +311,9 @@ inline constexpr auto Unwrap(T value) noexcept
   return value.get();
 }
 
-template <typename Op>
-struct Perform {
-  template <WeakValueOrReferenceT... Values>
-  constexpr OperationValue operator()(Values&&... values) const {
-    constexpr auto rule = details::GetPerformRule<
-        Op, typename PerformTraits<Values>::PerformType...>();
-    if constexpr (IsPerformableRule(rule)) {
-      return rule(Unwrap(values)...);
-    } else {
-      // pls smt smarter
-      throw "bruh";
-    }
-  }
-};
+}  // namespace details
 
-template <typename Visitor, SameAsValueOrReference... Values>
-auto VisitValues(Visitor&& visitor, Values&&... values) {
-  return std::visit(std::forward<Visitor>(visitor),
-                    std::forward<Values>(values)...);
-}
-
+// TODO: looks like should be refactored
 template <typename Visitor, SameAsOperationValue... OperationValues>
 auto VisitOperationValues(Visitor&& visitor,
                           OperationValues&&... operation_values) {
@@ -342,9 +325,23 @@ auto VisitOperationValues(Visitor&& visitor,
       std::forward<OperationValues>(operation_values)...);
 }
 
-template <typename Op, SameAsOperationValue... Values>
+template <OperationT Op>
+struct OperationPerformer {
+  template <WeakValueOrReferenceT... Values>
+  constexpr OperationValue operator()(Values&&... values) const {
+    constexpr auto rule = details::GetPerformRule<
+        Op, typename details::PerformTraits<Values>::PerformType...>();
+    if constexpr (IsPerformableRule(rule)) {
+      return rule(details::Unwrap(std::forward<Values>(values))...);
+    } else {
+      throw NotDefinedOperationError{"Operation is not defined"};
+    }
+  }
+};
+
+template <OperationT Op, SameAsOperationValue... Values>
 constexpr OperationValue PerformOperation(Values... values) {
-  return VisitOperationValues(Perform<Op>{}, std::move(values)...);
+  return VisitOperationValues(OperationPerformer<Op>{}, std::move(values)...);
 }
 
 }  // namespace interpreter::instructions

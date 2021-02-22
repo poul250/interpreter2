@@ -86,4 +86,10 @@ struct ToBoolVisitor {
   }
 };
 
+template <typename Visitor, SameAsValueOrReference... Values>
+auto VisitValues(Visitor&& visitor, Values&&... values) {
+  return std::visit(std::forward<Visitor>(visitor),
+                    std::forward<Values>(values)...);
+}
+
 }  // namespace interpreter::instructions
