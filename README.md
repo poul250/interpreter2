@@ -7,8 +7,8 @@
 This interpreter is a modification of https://github.com/poul250/interpreter.
 
 ### Formal grammar
-  * An entry of the form ⎨α⎬ means an iteration of the chain α, i.e. in the generated chain, either ε, α, αα, or ααα can be located in this place, etc.
-  * An entry of the form [α] means that either α or ε can be found in the desired chain at this point.
+*  An entry of the form ⎨α⎬ means an iteration of the chain α, i.e. in the generated chain, either ε, α, αα, or ααα can be located in this place, etc.
+*  An entry of the form [α] means that either α or ε can be found in the desired chain at this point.
 ```text
 〈Program〉::= program {〈Descriptions〉〈Operators〉}
 〈Descriptions〉 ::= ⎨〈Description〉;⎬
