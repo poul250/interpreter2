@@ -273,11 +273,16 @@ class ModelReader {
       return ParseResult::FAILURE;
     }
 
-    if (Current().type == LexType::ASSIGN) {
+    size_t assign_count = 0;
+    while (Current().type == LexType::ASSIGN) {
       MoveNext();
       if (VisitOr() == ParseResult::FAILURE) {
         throw ParseExpressionError{"Expression parse error"};
       }
+      ++assign_count;
+    }
+
+    while (assign_count--) {
       visitor_.VisitAssign();
     }
 

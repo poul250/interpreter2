@@ -1,0 +1,5 @@
+program {
+    int a = 1, b = 2, c = 3, d = 4;
+    a = b = c = d;
+    write(a, b, c, d);
+}
