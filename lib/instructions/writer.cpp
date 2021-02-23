@@ -167,6 +167,28 @@ void InstructionsWriter::VisitEndWhile() {
   loops_starts_stack_.pop();
 }
 
+void InstructionsWriter::VisitDoWhile() {
+  // store current position on the stack
+  loops_starts_stack_.push(instructions_.size() - 1);
+
+  // create list of breaks
+  loops_breaks_stack_.push({});
+}
+
+void InstructionsWriter::VisitDoWhileEnd() {
+  if (loops_starts_stack_.empty() || loops_breaks_stack_.empty()) {
+    throw WriterError{"Missing do-while block before dowhile end"};
+  }
+  const auto loop_end_label = instructions_.size();
+
+  for (const auto& break_jump : loops_breaks_stack_.top()) {
+    break_jump->SetLabel(loop_end_label);
+  }
+  loops_breaks_stack_.pop();
+
+  instructions_.push_back(std::make_shared<JumpTrue>());
+}
+
 void InstructionsWriter::VisitBreak() {
   if (loops_breaks_stack_.empty()) {
     throw WriterError{"break instruction outside the loop"};

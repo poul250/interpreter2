@@ -12,7 +12,14 @@ namespace {
 
 using LexType = lexer::LexType;
 
-enum class ParseResult : bool { FAILURE = false, SUCCESS = true };
+struct ParseResult {
+ public:
+  enum { FAILURE = false, SUCCESS = true };
+  constexpr ParseResult(bool result) noexcept : result(result) {}
+
+  [[nodiscard]] constexpr operator bool() const noexcept { return result; }
+  bool result;
+};
 
 // TODO: Is that ok?
 [[nodiscard]] inline VariableType MapType(LexType type) {
@@ -374,6 +381,33 @@ class ModelReader {
     return ParseResult::SUCCESS;
   }
 
+  ParseResult VisitDoWhile() {
+    if (Current().type != LexType::DO) {
+      return ParseResult::FAILURE;
+    }
+    visitor_.VisitDoWhile();
+
+    MoveNext();
+    if (VisitOperator() == ParseResult::FAILURE) {
+      throw ParseOperatorError{"Failed to parse do-while operator"};
+    }
+
+    Validated(Current(), LexType::WHILE);
+    Validated(MoveNext(), LexType::OPENING_PARENTHESIS);
+
+    MoveNext();
+    if (VisitExpression() == ParseResult::FAILURE) {
+      throw ParseOperatorError{"Failed to parse do-while expression"};
+    }
+
+    Validated(Current(), LexType::CLOSING_PARENTHESIS);
+    Validated(MoveNext(), LexType::SEMICOLON);
+    visitor_.VisitDoWhileEnd();
+
+    MoveNext();
+    return ParseResult::SUCCESS;
+  }
+
   ParseResult VisitWhile() {
     if (Current().type != LexType::WHILE) {
       return ParseResult::FAILURE;
@@ -429,14 +463,9 @@ class ModelReader {
 
   ParseResult VisitOperator() {
     // using lazy evaluation here
-    if (VisitIf() == ParseResult::SUCCESS ||
-        VisitWhile() == ParseResult::SUCCESS ||
-        VisitBreak() == ParseResult::SUCCESS ||
-        VisitContinue() == ParseResult::SUCCESS ||
-        VisitRead() == ParseResult::SUCCESS ||
-        VisitWrite() == ParseResult::SUCCESS ||
-        VisitCompoundOperator() == ParseResult::SUCCESS ||
-        VisitExpressionOperator() == ParseResult::SUCCESS) {
+    if (VisitIf() || VisitWhile() || VisitDoWhile() || VisitBreak() ||
+        VisitContinue() || VisitRead() || VisitWrite() ||
+        VisitCompoundOperator() || VisitExpressionOperator()) {
       return ParseResult::SUCCESS;
     }
 

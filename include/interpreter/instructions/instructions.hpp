@@ -116,11 +116,25 @@ class GoTo : public JumpInstruction {
   void Execute(ExecutionContext& context) const override;
 };
 
-class JumpFalse : public JumpInstruction {
+class JumpBool : public JumpInstruction {
+ public:
+  inline explicit JumpBool(bool jump_statement, Label label = 0) noexcept
+      : JumpInstruction{label}, jump_statement_{jump_statement} {}
+  void Execute(ExecutionContext& context) const override;
+
+ private:
+  bool jump_statement_;
+};
+
+class JumpFalse : public JumpBool {
  public:
   inline explicit JumpFalse(Label label = 0) noexcept
-      : JumpInstruction{label} {}
-  void Execute(ExecutionContext& context) const override;
+      : JumpBool{false, label} {}
+};
+
+class JumpTrue : public JumpBool {
+ public:
+  inline explicit JumpTrue(Label label = 0) noexcept : JumpBool{true, label} {}
 };
 
 template <typename BinaryOpHandler>

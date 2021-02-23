@@ -32,6 +32,10 @@ class InstructionsWriter : public ast::ModelVisitor {
   void VisitWhile() override;
   void VisitWhileBody() override;
   void VisitEndWhile() override;
+
+  void VisitDoWhile() override;
+  void VisitDoWhileEnd() override;
+
   void VisitBreak() override;
   void VisitContinue() override;
 

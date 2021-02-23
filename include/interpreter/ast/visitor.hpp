@@ -54,6 +54,10 @@ class ModelVisitor {
   virtual void VisitWhile() = 0;
   virtual void VisitWhileBody() = 0;
   virtual void VisitEndWhile() = 0;
+
+  virtual void VisitDoWhile() = 0;
+  virtual void VisitDoWhileEnd() = 0;
+
   virtual void VisitBreak() = 0;
   virtual void VisitContinue() = 0;
 

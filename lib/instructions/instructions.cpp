@@ -96,7 +96,7 @@ void InvokeVariable::Execute(ExecutionContext& context) const {
       variable));
 }
 
-void JumpFalse::Execute(ExecutionContext& context) const {
+void JumpBool::Execute(ExecutionContext& context) const {
   if (context.values_stack.empty()) {
     throw RuntimeError{"No expressions for perform bool jump"};
   }
@@ -104,9 +104,9 @@ void JumpFalse::Execute(ExecutionContext& context) const {
   auto value = context.values_stack.top();
   context.values_stack.pop();
 
-  const bool if_expression_result =
+  const bool bool_on_stack =
       VisitOperationValues(ToBoolVisitor{}, std::move(value));
-  if (!if_expression_result) {
+  if (bool_on_stack == jump_statement_) {
     context.current_instruction = label_;
   }
 }
